@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e13">
+<title>PlateWatch DVR</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0e13;--bg2:#0e141b;--card:#131a23;--card2:#1a232e;--tx:#e8edf5;--mut:#8996a9;--bd:#263140;--acc:#22d3ee;--onacc:#04222b;--red:#ff5d5d;--grn:#34d399;--amb:#fbbf24;--blu:#4da3ff;--r:14px;--nav:64px;--bar:50px}
+:root[data-theme=light]{color-scheme:light;--bg:#edf2f7;--bg2:#e2e9f1;--card:#fff;--card2:#f0f4f9;--tx:#0f1722;--mut:#5d6b80;--bd:#d3dce8;--acc:#0891b2;--onacc:#fff;--red:#dc2626;--grn:#059669;--amb:#b45309;--blu:#2563eb}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button,select,input{font:inherit;color:var(--tx)}
+svg{width:1.2em;height:1.2em;flex:none;vertical-align:-.22em}
+#bar{position:fixed;top:0;left:0;right:0;height:calc(var(--bar) + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 12px 0;background:var(--bg2);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:12px;z-index:50}
+.brand{display:flex;align-items:center;gap:8px;white-space:nowrap}.brand small{color:var(--mut);font-weight:700;letter-spacing:.1em}
+.logo{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--acc),#6366f1);color:var(--onacc)}.logo svg{width:18px;height:18px}
+.barcams{display:flex;flex-wrap:nowrap;gap:6px;overflow:auto;flex:1;min-width:0;scrollbar-width:none}.barcams .bc{flex:none}.barcams::-webkit-scrollbar{display:none}
+.bc{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:99px;background:var(--card);border:1px solid var(--bd);font-size:12px;white-space:nowrap}
+.bc i{width:8px;height:8px;border-radius:50%;background:var(--mut)}.bc.live i{background:var(--grn)}.bc.rec i{background:var(--red);animation:pulse 1s infinite}.bc.err i{background:var(--amb)}
+@keyframes pulse{50%{opacity:.25}}
+.barr{display:flex;align-items:center;gap:8px}
+.chip{font:700 11px ui-monospace,monospace;padding:5px 9px;border-radius:99px;background:var(--card);border:1px solid var(--bd);color:var(--mut);white-space:nowrap}.chip.ok{color:var(--grn);border-color:var(--grn)}.chip.bad{color:var(--red);border-color:var(--red)}.chip.warn{color:var(--amb);border-color:var(--amb)}
+.clock{font:600 13px ui-monospace,monospace;color:var(--mut);min-width:64px;text-align:right}
+.ib{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--bd);background:var(--card);cursor:pointer}.ib.off{opacity:.45}
+#nav{position:fixed;z-index:50;background:var(--bg2);display:flex}
+#nav button{background:none;border:0;color:var(--mut);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;position:relative;font-weight:600}
+#nav button svg{width:22px;height:22px}#nav button.on{color:var(--acc)}
+.badge{position:absolute;top:6px;right:calc(50% - 22px);min-width:17px;height:17px;border-radius:9px;background:var(--red);color:#fff;font:700 10px/17px system-ui;text-align:center;font-style:normal;display:none;padding:0 4px}
+main{position:fixed;top:calc(var(--bar) + env(safe-area-inset-top,0px));bottom:calc(var(--nav) + env(safe-area-inset-bottom,0px));left:0;right:0;overflow:auto}
+#nav{left:0;right:0;bottom:0;height:calc(var(--nav) + env(safe-area-inset-bottom,0px));padding-bottom:env(safe-area-inset-bottom,0px);border-top:1px solid var(--bd)}#nav button{flex:1}
+@media(min-width:900px){#nav{top:calc(var(--bar) + env(safe-area-inset-top,0px));bottom:0;right:auto;width:76px;flex-direction:column;justify-content:flex-start;padding:8px 0;border-top:0;border-right:1px solid var(--bd);height:auto}#nav button{flex:none;height:64px}main{left:76px;bottom:0}}
+.view{display:none;padding:12px;max-width:1500px;margin:0 auto}.view.on{display:block}
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}.grow{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:11px;border:1px solid var(--bd);background:var(--card);cursor:pointer;font-weight:600;text-decoration:none;color:var(--tx)}.btn:hover{border-color:var(--acc)}.btn.pri{background:var(--acc);color:var(--onacc);border-color:transparent}.btn.sm{padding:5px 9px;font-size:12px}.btn.on{background:var(--acc);color:var(--onacc);border-color:transparent}.btn.danger{color:var(--red)}
+select,input[type=text],input[type=search],input[type=date],input[type=time],input[type=url],input[type=password],input[type=number]{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 10px;min-width:0}
+.seg{display:inline-flex;background:var(--card);border:1px solid var(--bd);border-radius:11px;padding:3px}.seg button{border:0;background:none;padding:5px 11px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--mut)}.seg button.on{background:var(--acc);color:var(--onacc)}
+/* live grid and tiles */
+.grid{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))}.grid.g1{grid-template-columns:1fr}.grid.g2{grid-template-columns:repeat(2,1fr)}.grid.g3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:700px){.grid.g2,.grid.g3{grid-template-columns:1fr}}
+.tile{position:relative;background:#000;border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;border:1px solid var(--bd);touch-action:pan-y}.tile.zoomed{touch-action:none;cursor:grab}
+.tz{position:absolute;inset:0;transform-origin:0 0;will-change:transform}.tz>video,.tz>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}.tz canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.tt{position:absolute;left:8px;top:8px;display:flex;gap:6px;align-items:center;z-index:3;pointer-events:none}.tt b{background:rgba(0,0,0,.6);color:#fff;padding:4px 8px;border-radius:7px;font-size:12px}
+.tch span{background:rgba(0,0,0,.6);color:#fff;padding:4px 7px;border-radius:7px;font:700 11px ui-monospace,monospace;margin-right:4px}.tch .r{background:var(--red)}.tch .a{background:#2563eb}
+.tc{position:absolute;right:8px;bottom:8px;z-index:4;display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 16px)}
+.tc button{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(10,15,20,.62);color:#fff;display:inline-grid;place-items:center;cursor:pointer;backdrop-filter:blur(8px)}.tc button.on{background:var(--acc);color:var(--onacc);border-color:transparent}.tc button.rec.on{background:var(--red);color:#fff}
+.tmsg{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#b7c2d3;padding:14px;z-index:2;font-size:13px}.tmsg:empty{display:none}
+.tile.fs,.tile.pfs{border-radius:0;aspect-ratio:auto}.tile.pfs{position:fixed;inset:0;z-index:90}
+/* scene panel */
+.scene{margin-top:12px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:12px}
+.scene h3{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);display:flex;align-items:center;gap:8px}
+.live{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.2s infinite}
+.sc-row{display:flex;gap:10px;padding:9px 0;border-top:1px solid var(--bd)}.sc-row:first-of-type{border-top:0}.sc-cam{font-weight:700;min-width:96px}.sc-t{flex:1;font-size:15px;line-height:1.5}.sc-m{color:var(--mut);font-size:12px}
+/* OSD */
+.osd{position:absolute;inset:0;z-index:5;pointer-events:none;color:#fff;display:none;text-shadow:0 1px 3px #000}.tile.fs .osd,.tile.pfs .osd{display:block}
+.osd-i{pointer-events:auto;cursor:pointer}
+.o-top{position:absolute;left:14px;right:14px;top:calc(10px + env(safe-area-inset-top,0px));display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.o-clock b{font:700 clamp(24px,4vw,42px)/1 ui-monospace,monospace;display:block}.o-clock span{font-size:12px;display:block;opacity:.9}.rc{color:#ff7a7a;font-style:normal;font-weight:700}
+.o-stats{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.o-stats div{background:rgba(0,0,0,.55);border-radius:10px;padding:5px 10px;text-align:center;font-size:10px;text-shadow:none}.o-stats b{display:block;font-size:clamp(15px,2.5vw,22px)}
+.o-feed{position:absolute;left:14px;top:calc(96px + env(safe-area-inset-top,0px));bottom:calc(150px + env(safe-area-inset-bottom,0px));width:min(46%,340px);overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent)}
+.o-feed .roll{display:grid;gap:6px;animation:roll var(--d,30s) linear infinite}.o-feed:hover .roll,.o-feed.hold .roll{animation-play-state:paused}
+@keyframes roll{from{transform:translateY(0)}to{transform:translateY(-50%)}}
+.o-al{display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);border-left:5px solid var(--c,#4da3ff);border-radius:9px;padding:6px 9px;font-size:12.5px;text-shadow:none}.o-al b{display:block}.o-al small{opacity:.75}.o-al.new{animation:flash 1s 3}@keyframes flash{50%{background:var(--c)}}
+.o-objs{position:absolute;right:14px;top:calc(100px + env(safe-area-inset-top,0px));display:grid;gap:5px;max-width:42%}.o-objs div{background:rgba(0,0,0,.55);border-radius:8px;padding:4px 9px;font-size:12px;text-shadow:none}
+.o-bot{position:absolute;left:14px;right:14px;bottom:calc(58px + env(safe-area-inset-bottom,0px));display:grid;gap:6px}
+.o-desc{background:rgba(0,0,0,.62);border-radius:10px;padding:8px 11px;font-size:clamp(13px,1.8vw,17px);line-height:1.45;text-shadow:none}
+.o-tick{background:rgba(0,0,0,.62);border-radius:10px;overflow:hidden;white-space:nowrap;font-size:12.5px;padding:6px 0;text-shadow:none}.o-tick span{display:inline-block;padding-left:100%;animation:tick var(--d,40s) linear infinite}@keyframes tick{to{transform:translateX(-100%)}}
+.o-flag{position:absolute;left:50%;top:22%;transform:translateX(-50%);background:var(--c);color:#fff;font-weight:800;padding:12px 20px;border-radius:14px;font-size:clamp(15px,2.6vw,24px);text-align:center;max-width:90%;animation:flash 1s 5;text-shadow:none}
+/* alerts */
+.alerts{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.ac{background:var(--card);border:1px solid var(--bd);border-left:5px solid var(--c,#4da3ff);border-radius:12px;overflow:hidden;cursor:pointer}.ac:hover{border-color:var(--c)}
+.ac .im{aspect-ratio:16/9;background:#000;position:relative}.ac .im img{width:100%;height:100%;object-fit:cover;display:block}.ac .im .cr{position:absolute;left:6px;bottom:6px;height:30px;width:auto;border:1px solid #fff;border-radius:4px}
+.ac .bd{padding:8px 10px}.ac b{display:block}.ac small{color:var(--mut)}.sev{display:inline-block;font:700 10px ui-monospace,monospace;padding:2px 7px;border-radius:99px;background:var(--c);color:#000;margin-right:6px}
+.empty{color:var(--mut);text-align:center;padding:30px}
+/* playback */
+.player{position:relative;background:#000;border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;max-height:62vh;margin:0 auto;border:1px solid var(--bd)}.player video{width:100%;height:100%;object-fit:contain;display:block}
+.player.fs{border-radius:0;aspect-ratio:auto;max-height:none;position:fixed;inset:0;z-index:88}
+.pbmsg{position:absolute;inset:0;display:grid;place-items:center;color:#9fb0c6;text-align:center;padding:20px;pointer-events:none}.pbmsg:empty{display:none}.pbtime{position:absolute;left:10px;top:8px;background:rgba(0,0,0,.6);color:#fff;padding:3px 9px;border-radius:8px;font:600 13px ui-monospace,monospace}
+.pbfs-osd{position:absolute;inset:0;z-index:6;pointer-events:none;color:#fff;display:none;text-shadow:0 1px 3px #000}.player.fs .pbfs-osd{display:block}
+.pbfs-osd .osd-i{pointer-events:auto;cursor:pointer}
+.pbfs-osd .o-top{position:absolute;left:14px;right:14px;top:calc(10px + env(safe-area-inset-top,0px));display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.pbfs-osd .o-clock b{font:700 clamp(24px,4vw,42px)/1 ui-monospace,monospace;display:block}.pbfs-osd .o-clock span{font-size:12px;display:block;opacity:.9}
+.pbfs-osd .o-stats{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.pbfs-osd .o-stats div{background:rgba(0,0,0,.55);border-radius:10px;padding:5px 10px;text-align:center;font-size:10px;text-shadow:none}.pbfs-osd .o-stats b{display:block;font-size:clamp(15px,2.5vw,22px)}
+.pbfs-osd .o-feed{position:absolute;left:14px;top:calc(96px + env(safe-area-inset-top,0px));bottom:calc(160px + env(safe-area-inset-bottom,0px));width:min(46%,340px);overflow:hidden;-webkit-mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(transparent,#000 8%,#000 92%,transparent)}
+.pbfs-osd .o-feed .roll{display:grid;gap:6px;animation:roll var(--d,30s) linear infinite}
+.pbfs-osd .o-objs{position:absolute;right:14px;top:calc(100px + env(safe-area-inset-top,0px));display:grid;gap:5px;max-width:42%}.pbfs-osd .o-objs div{background:rgba(0,0,0,.55);border-radius:8px;padding:4px 9px;font-size:12px;text-shadow:none}
+.pbfs-osd .o-bot{position:absolute;left:14px;right:14px;bottom:calc(112px + env(safe-area-inset-bottom,0px));display:grid;gap:6px}
+.pbfs-osd .o-desc{background:rgba(0,0,0,.62);border-radius:10px;padding:8px 11px;font-size:clamp(13px,1.8vw,17px);line-height:1.45;text-shadow:none}
+.pbfs-osd .o-tick{background:rgba(0,0,0,.62);border-radius:10px;overflow:hidden;white-space:nowrap;font-size:12.5px;padding:6px 0;text-shadow:none}.pbfs-osd .o-tick span{display:inline-block;padding-left:100%;animation:tick var(--d,40s) linear infinite}
+.pbfs-osd .o-al{display:flex;gap:8px;align-items:center;background:rgba(0,0,0,.6);border-left:5px solid var(--c,#4da3ff);border-radius:9px;padding:6px 9px;font-size:12.5px;text-shadow:none}.pbfs-osd .o-al b{display:block}.pbfs-osd .o-al small{opacity:.75}
+.pbfs-osd .o-al.new{animation:flash 1s 3}
+.pbfs-controls{position:absolute;left:0;right:0;bottom:0;z-index:7;display:none;background:linear-gradient(transparent,rgba(0,0,0,.85));padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px))}
+.player.fs .pbfs-controls{display:flex;flex-direction:column;gap:8px}
+.pbfs-controls .transport{margin:0;justify-content:center}
+.pbfs-controls .pbinfo{color:#dbe4ef;margin:0}
+.pbfs-controls .tb{background:rgba(20,28,36,.85);border-color:rgba(255,255,255,.25);color:#fff}
+.pbfs-controls .tb.big{background:var(--acc);color:var(--onacc)}
+.tlwrap{position:relative;margin-top:10px;background:var(--card);border:1px solid var(--bd);border-radius:12px;height:96px;touch-action:none;cursor:pointer}.tlwrap canvas{width:100%;height:100%;display:block}
+.tltip{position:absolute;top:-34px;background:#000d;color:#fff;font-size:12px;padding:4px 8px;border-radius:7px;pointer-events:none;display:none;white-space:nowrap;z-index:3}
+.tlbtns{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}.legend{margin-left:auto;color:var(--mut);font-size:11px}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px 0 10px;vertical-align:-1px}
+.transport{display:flex;gap:6px;justify-content:center;align-items:center;margin-top:12px;flex-wrap:wrap}
+.tb{min-width:46px;height:46px;border-radius:13px;border:1px solid var(--bd);background:var(--card);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:2px;padding:0 10px;font-weight:700}.tb:hover{border-color:var(--acc)}.tb.big{min-width:64px;background:var(--acc);color:var(--onacc);border-color:transparent}.tb.big svg{width:26px;height:26px}.tb small{font-size:10px}.tb.txt{min-width:58px}
+.pbinfo{text-align:center;color:var(--mut);font-size:12px;margin-top:8px}
+/* settings, cameras, sheet, modal */
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:12px}.card h3{margin:0 0 10px;font-size:15px}.card h4{margin:12px 0 6px;color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.set-row{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0;border-top:1px solid var(--bd)}.set-row:first-of-type{border-top:0}.set-row label{flex:1}.set-row small{display:block;color:var(--mut);font-size:11.5px}.set-row input[type=range]{width:min(44%,220px)}
+.tog{position:relative;width:46px;height:26px;flex:none}.tog input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}.tog span{position:absolute;inset:0;background:var(--bd);border-radius:99px;transition:.2s}.tog span::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}.tog input:checked+span{background:var(--grn)}.tog input:checked+span::after{transform:translateX(20px)}
+.rules{width:100%;border-collapse:collapse;font-size:13px}.rules td,.rules th{padding:7px 6px;border-top:1px solid var(--bd);text-align:left;vertical-align:middle}.rules th{color:var(--mut);font-size:11px;text-transform:uppercase}
+.camrow{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}.camrow:first-child{border-top:0}.camrow .nm{flex:1}.camrow small{color:var(--mut);display:block}
+#sheet{display:none;position:fixed;inset:0;z-index:80;background:var(--bg);flex-direction:column}#sheet.show{display:flex}.sht{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--bd);background:var(--card);padding-top:calc(10px + env(safe-area-inset-top,0px))}.sht b{flex:1}
+#shBody{flex:1;overflow:auto;padding:12px;max-width:960px;width:100%;margin:0 auto}.dimg{width:100%;border-radius:12px;background:#000;display:block}.dcr{height:60px;border-radius:6px;border:1px solid var(--bd);margin-top:8px}
+.info{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:2px 12px;margin-top:10px}.ir{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--bd)}.ir:first-child{border-top:0}.ir span{color:var(--mut)}.ir b{text-align:right;word-break:break-word}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#modal{display:none;position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.6);place-items:center;padding:14px}#modal.show{display:grid}.mbox{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;width:min(560px,100%);max-height:90vh;overflow:auto}.mbox label{display:block;margin:10px 0 4px;color:var(--mut);font-size:12px}.mbox input,.mbox select{width:100%}
+#login{display:none;position:fixed;inset:0;z-index:100;background:var(--bg);place-items:center}#login.show{display:grid}.lbox{display:grid;gap:12px;text-align:center;width:min(320px,90%)}#lerr{color:var(--red)}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav) + 14px + env(safe-area-inset-bottom,0px));z-index:120;display:grid;gap:6px;pointer-events:none}@media(min-width:900px){#toasts{bottom:18px}}
+.toast{background:var(--card2);border:1px solid var(--bd);border-radius:11px;padding:9px 14px;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:fade 4s forwards}.toast.err{border-color:var(--red)}@keyframes fade{0%,85%{opacity:1}100%{opacity:0}}
+.hint{color:var(--mut);font-size:12px}
+
+</style>
+</head>
+<body>
+<header id="bar">
+  <div class="brand"><span class="logo" data-i="shield"></span><b>PlateWatch</b><small>DVR</small></div>
+  <div class="barcams" id="barcams"></div>
+  <div class="barr">
+    <span class="chip" id="bAI" title="On-device AI">AI</span>
+    <span class="chip" id="bApi" title="Backend">Backend</span>
+    <span class="chip" id="bStor" title="Recording storage"></span>
+    <span class="clock" id="bClock"></span>
+    <button class="ib" id="bSound" data-i="speaker" title="Alert sounds on/off"></button>
+    <button class="ib" id="bTheme" data-i="theme" title="Light / dark"></button>
+  </div>
+</header>
+<nav id="nav">
+  <button data-v="live" class="on" data-i="camera"><span>Live</span></button>
+  <button data-v="play" data-i="film"><span>Playback</span></button>
+  <button data-v="alerts" data-i="alert"><span>Alerts</span><i id="nAlerts" class="badge"></i></button>
+  <button data-v="cams" data-i="grid"><span>Cameras</span></button>
+  <button data-v="set" data-i="sliders"><span>Settings</span></button>
+</nav>
+<main>
+  <section id="v-live" class="view on">
+    <div class="toolbar">
+      <div class="seg" id="layoutSeg"><button data-l="auto">Auto</button><button data-l="1">1</button><button data-l="2">2×2</button><button data-l="3">3×3</button></div>
+      <button class="btn" id="followAll" data-i="target">Auto-follow</button>
+      <button class="btn" id="narrBtn" data-i="speaker">Narration</button>
+      <button class="btn" id="addCamQuick" data-i="plus">Add camera</button>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="scene" id="scenePanel"></div>
+  </section>
+  <section id="v-play" class="view">
+    <div class="toolbar">
+      <select id="pbCam"></select>
+      <input type="date" id="pbDay">
+      <label class="btn" data-i="film">Open file…<input type="file" id="pbFile" accept="video/*,.mp4,.webm,.mkv,.mov,.m4v" hidden multiple></label>
+      <button class="btn" id="pbAnalyse" data-i="eye" title="Run AI, rules, narration on opened file (A)">Analyse file</button>
+      <span class="grow"></span>
+      <select id="pbFileList" title="Opened files" style="display:none;max-width:240px"></select>
+      <button class="btn" id="pbLive" data-i="camera">Live</button>
+    </div>
+    <div class="player" id="player">
+      <video id="pbVideo" playsinline></video>
+      <div class="pbmsg" id="pbMsg">Choose a camera and day, then click the timeline.</div>
+      <div class="pbtime" id="pbTime"></div>
+      <div class="pbfs-osd" id="pbOsd">
+        <div class="o-top"></div>
+        <div class="o-feed"></div>
+        <div class="o-objs"></div>
+        <div class="o-bot"></div>
+      </div>
+      <div class="pbfs-controls" id="pbFsCtrl">
+        <div class="transport" id="transportFs"></div>
+        <div class="pbinfo" id="pbInfoFs"></div>
+      </div>
+    </div>
+    <div class="tlwrap"><canvas id="tl"></canvas><div class="tltip" id="tlTip"></div></div>
+    <div class="tlbtns">
+      <button class="btn sm" data-z="1440">24 h</button><button class="btn sm" data-z="360">6 h</button><button class="btn sm" data-z="60">1 h</button><button class="btn sm" data-z="10">10 min</button>
+      <span class="legend"><i style="background:#4da3ff"></i>motion <i style="background:#ff6b5e"></i>alert <i style="background:#9aa4b5"></i>continuous <i style="background:#34d399"></i>manual</span>
+    </div>
+    <div class="transport" id="transport">
+      <button class="tb" id="tPrevEv" data-i="prev" title="Previous alert (P)"></button>
+      <button class="tb" id="tBack" data-i="rw" title="Back 10 s (J / ←)"><small>10</small></button>
+      <button class="tb big" id="tPlay" data-i="play" title="Play / pause (Space or K)"></button>
+      <button class="tb" id="tFwd" data-i="ff" title="Forward 10 s (L / →)"><small>10</small></button>
+      <button class="tb" id="tNextEv" data-i="next" title="Next alert (N)"></button>
+      <button class="tb txt" id="tSpeed" title="Speed ( [ and ] )">1×</button>
+      <button class="tb" id="tFrame" data-i="step" title="Step one frame when paused (. and ,)"></button>
+      <button class="tb" id="tSnap" data-i="photo" title="Save snapshot"></button>
+      <button class="tb" id="tDl" data-i="download" title="Download this recording"></button>
+      <button class="tb" id="tFs" data-i="full" title="Fullscreen (F)"></button>
+    </div>
+    <div class="pbinfo" id="pbInfo"></div>
+  </section>
+  <section id="v-alerts" class="view">
+    <div class="toolbar wrap">
+      <div class="seg" id="sevSeg"><button data-s="" class="on">All</button><button data-s="critical">Critical</button><button data-s="high">High</button><button data-s="medium">Medium</button><button data-s="low">Low</button><button data-s="info">Info</button></div>
+      <select id="alCam"></select><input type="search" id="alQ" placeholder="Search plate or text">
+      <span class="grow"></span><button class="btn sm" id="csvBtn" data-i="download">CSV</button>
+    </div>
+    <div class="alerts" id="alList"></div>
+  </section>
+  <section id="v-cams" class="view"><div id="camList"></div></section>
+  <section id="v-set" class="view"><div id="setBody"></div></section>
+</main>
+<div id="sheet"><div class="sht"><button class="ib" id="shBack" data-i="close"></button><b id="shTitle"></b><span id="shCount"></span></div><div id="shBody"></div></div>
+<div id="modal"><div class="mbox" id="mbox"></div></div>
+<div id="login"><div class="lbox"><h2>PlateWatch DVR</h2><input type="password" id="lpw" placeholder="Password"><button class="btn pri" id="lgo">Unlock</button><div id="lerr"></div></div></div>
+<div id="toasts"></div>
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p2=n=>String(n).padStart(2,'0');
+const tm=t=>new Date(t).toLocaleTimeString('en-GB'),dt=t=>new Date(t).toLocaleString('en-GB');
+const dkey=t=>{const d=new Date(t);return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())};
+const fsize=b=>b>=1e9?(b/1e9).toFixed(2)+' GB':b>=1e6?(b/1e6).toFixed(1)+' MB':Math.max(1,Math.round(b/1e3))+' KB';
+const fdur=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+p2(s%60)};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lget=(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v}catch{return d}},lset=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+const SEV={info:{n:0,c:'#34d399',l:'Info'},low:{n:1,c:'#4da3ff',l:'Low'},medium:{n:2,c:'#fbbf24',l:'Medium'},high:{n:3,c:'#fb923c',l:'High'},critical:{n:4,c:'#ff4d4d',l:'Critical'}};
+const norm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const fmtPlate=p=>/^[A-Z]{2}\d{2}[A-Z]{3}$/.test(p)?p.slice(0,4)+' '+p.slice(4):p;
+
+/* ---------- icons ---------- */
+const ICONS={
+ play:'<polygon points="7 4 20 12 7 20" fill="currentColor" stroke="none"/>',pause:'<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>',
+ rec:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.6" fill="currentColor" stroke="none"/>',stop:'<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>',
+ rw:'<polygon points="11 18 3 12 11 6" fill="currentColor" stroke="none"/><polygon points="21 18 13 12 21 6" fill="currentColor" stroke="none"/>',ff:'<polygon points="13 18 21 12 13 6" fill="currentColor" stroke="none"/><polygon points="3 18 11 12 3 6" fill="currentColor" stroke="none"/>',
+ prev:'<polygon points="19 19 9 12 19 5" fill="currentColor" stroke="none"/><line x1="5" y1="5" x2="5" y2="19"/>',next:'<polygon points="5 5 15 12 5 19" fill="currentColor" stroke="none"/><line x1="19" y1="5" x2="19" y2="19"/>',step:'<rect x="3" y="6" width="12" height="12" rx="2"/><path d="M19 8v8"/>',
+ camera:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',photo:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+ full:'<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>',close:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+ zin:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.7" y2="16.7"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>',zout:'<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.7" y2="16.7"/><line x1="8" y1="11" x2="14" y2="11"/>',
+ theme:'<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>',shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><circle cx="12" cy="11" r="2.5"/>',
+ film:'<rect x="3" y="4" width="18" height="16" rx="2"/><polygon points="10 9 16 12 10 15" fill="currentColor" stroke="none"/>',sliders:'<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+ speaker:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>',mute:'<polygon points="11 5 6 9 2 9 2 15 6 15 11 19" fill="currentColor"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>',
+ alert:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+ target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+ download:'<path d="M12 3v12M7 10l5 5 5-5M4 20h16"/>',trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',zone:'<rect x="4" y="5" width="16" height="14" rx="1" stroke-dasharray="3 3"/>',
+ eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',car:'<path d="M3 17v-4l2-6h14l2 6v4z"/><circle cx="7.5" cy="17" r="1.6"/><circle cx="16.5" cy="17" r="1.6"/>',folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'};
+const ic=n=>`<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'>${ICONS[n]||''}</svg>`;
+const setI=(el,n)=>{if(el)el.innerHTML=ic(n)};
+const hydrate=(root=document)=>$$('[data-i]',root).forEach(b=>{if(!b.dataset.hy){b.dataset.hy=1;b.insertAdjacentHTML('afterbegin',ic(b.dataset.i))}});
+
+/* ---------- storage lives in the browser ---------- */
+const API={online:true,ffmpeg:false};
+const CID=Math.random().toString(36).slice(2);
+const audit=a=>{DB.audit(a)};
+function toast(msg,type){const t=document.createElement('div');t.className='toast '+(type||'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),4200)}
+
+/* ---------- settings ---------- */
+const DEF={
+ ai:{minScore:.5,fps:8,ocr:true,region:'uk'},
+ follow:{on:false,target:'auto',classes:['person','car','truck','motorcycle','bus','dog'],minZoom:1,maxZoom:4,smooth:.12,pad:2.2,hold:4,plateZoom:true,capture:true,onlyDanger:false},
+ rec:{mode:'motion',seg:30,pre:5,post:15,bitrate:2500000,maxGB:20,retainDays:30},
+ narr:{on:true,mode:'changes',interval:30,voice:'',rate:1,pitch:1,vol:1,arrivals:true,detail:'normal',quiet:false,quietFrom:'22:00',quietTo:'06:00',minGap:6},
+ sound:{on:true,vol:.7},
+ rules:{},
+ notify:{browser:true,ntfy:'',ntfyServer:'https://ntfy.sh',webhook:'',minSev:'high'},
+ privacy:{mask:'off'},
+ ui:{layout:'auto',theme:'dark'}
+};
+const merge=(d,s)=>{if(Array.isArray(d))return Array.isArray(s)?s:d;if(d&&typeof d==='object'){const o={};for(const k of new Set([...Object.keys(d),...Object.keys(s&&typeof s==='object'?s:{})]))o[k]=k in d?merge(d[k],s&&s[k]):s[k];return o}return s===undefined?d:s};
+let S=merge(DEF,lget('pw_settings',{}));
+let saveT=0;
+function saveSettings(){lset('pw_settings',S)}
+const getp=(o,p)=>p.split('.').reduce((a,k)=>a&&a[k],o);
+const setp=(o,p,v)=>{const ks=p.split('.');const l=ks.pop();ks.reduce((a,k)=>a[k]=a[k]||{},o)[l]=v};
+const CAMDEF={id:'cam1',name:'Camera 1',type:'device',facing:'rear',deviceId:'',url:'',fps:6,enabled:true,detect:true,rec:'inherit',zones:[]};
+let CAMCFG=lget('pw_cams',null)||[Object.assign({},CAMDEF)];
+const saveCams=()=>{lset('pw_cams',CAMCFG)};
+let WATCH=lget('pw_watch',[]);
+const saveWatch=()=>{lset('pw_watch',WATCH)};
+const matchPlate=p=>{const e=WATCH.find(w=>w.plate===p);if(e)return{w:e,exact:true};if(p.length>=5){const f=WATCH.find(w=>lev(w.plate,p)<=1);if(f)return{w:f,exact:false}}return null};
+function lev(a,b){const m=[];for(let i=0;i<=a.length;i++)m[i]=[i];for(let j=0;j<=b.length;j++)m[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)m[i][j]=Math.min(m[i-1][j]+1,m[i][j-1]+1,m[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return m[a.length][b.length]}
+async function loadAll(){try{await DB.init()}catch(e){API.online=false}}
+
+'use strict';
+/* Storage inside the browser (IndexedDB), with an optional folder for recordings. Replaces the server. */
+const fnv=s=>{let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return('00000000'+(h>>>0).toString(16)).slice(-8).repeat(8)};
+async function sha(s){try{if(crypto&&crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}}catch{}return fnv(s)}
+const DB={db:null,folder:null,q:Promise.resolve(),lastH:'0',
+  open(){return new Promise((ok,no)=>{if(this.db)return ok(this.db);let r;try{r=indexedDB.open('plate-watch-dvr',1)}catch(e){return no(e)}
+    r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore('events',{keyPath:'id'}).createIndex('t','t');d.createObjectStore('recs',{keyPath:'name'}).createIndex('t','t');d.createObjectStore('chunks',{keyPath:['name','i']});d.createObjectStore('audit',{autoIncrement:true});d.createObjectStore('kv')};
+    r.onsuccess=()=>{this.db=r.result;ok(this.db)};r.onerror=()=>no(r.error)})},
+  async t(stores,mode,fn){const d=await this.open();return new Promise((ok,no)=>{const tx=d.transaction(stores,mode);let rq;try{rq=fn(tx)}catch(e){return no(e)}tx.oncomplete=()=>ok(rq&&'result' in rq?rq.result:undefined);tx.onerror=()=>no(tx.error);tx.onabort=()=>no(tx.error)})},
+  async init(){await this.open();try{const rows=await this.t('audit','readonly',tx=>tx.objectStore('audit').getAll());if(rows.length)this.lastH=rows[rows.length-1].h}catch{}
+    try{this.folder=await this.t('kv','readonly',tx=>tx.objectStore('kv').get('dir'))||null}catch{}
+    try{const stale=(await this.t('recs','readonly',tx=>tx.objectStore('recs').getAll())).filter(r=>r.open);for(const r of stale){let size=0,n=0;if(r.where!=='folder'){const ch=await this.t('chunks','readonly',tx=>tx.objectStore('chunks').getAll(IDBKeyRange.bound([r.name,0],[r.name,Number.MAX_SAFE_INTEGER])));ch.forEach(c=>{size+=c.blob.size;n++})}await this.recEnd(r.name,{size,dur:Math.max(r.dur||0,n*2000)})}}catch{}
+    setInterval(()=>this.prune().catch(()=>{}),3600e3);setTimeout(()=>this.prune().catch(()=>{}),4000)},
+  /* events */
+  addEvent(ev){return this.t('events','readwrite',tx=>{tx.objectStore('events').put(ev)})},
+  events(o){o=o||{};return this.open().then(d=>new Promise((ok,no)=>{const out=[],tx=d.transaction('events','readonly'),rq=tx.objectStore('events').index('t').openCursor(IDBKeyRange.bound(o.since||0,o.until||9e15),'prev');rq.onsuccess=()=>{const c=rq.result;if(!c||out.length>=(o.limit||300)){ok(out);return}if(!o.cam||c.value.cam===o.cam)out.push(c.value);c.continue()};rq.onerror=()=>no(rq.error)}))},
+  delEvent(id){return this.t('events','readwrite',tx=>{tx.objectStore('events').delete(id)})},
+  async exportCsv(){const l=await this.events({limit:1e5}),q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const rows=[['time','camera','severity','kind','title','plate','text'].join(',')].concat(l.map(e=>[new Date(e.t).toISOString(),e.camName||e.cam,e.sev,e.kind,e.title,e.plate,e.text].map(q).join(',')));
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));a.download='alerts.csv';a.click();audit('Exported alerts')},
+  /* recordings */
+  recStart(m){return this.t('recs','readwrite',tx=>{tx.objectStore('recs').put(m)})},
+  recChunk(name,i,blob){return this.t('chunks','readwrite',tx=>{tx.objectStore('chunks').put({name,i,blob})})},
+  async recEnd(name,patch){const m=await this.t('recs','readonly',tx=>tx.objectStore('recs').get(name));if(!m)return;Object.assign(m,patch,{open:false});await this.t('recs','readwrite',tx=>{tx.objectStore('recs').put(m)});return m},
+  async recs(cam,from,to){const l=await this.t('recs','readonly',tx=>tx.objectStore('recs').getAll()),now=Date.now();return l.filter(r=>(!cam||r.cam===cam)&&r.t<to&&r.t+(r.open?now-r.t:(r.dur||0))>from).map(r=>r.open?Object.assign({},r,{dur:now-r.t}):r).sort((a,b)=>a.t-b.t)},
+  async openSink(cam,tag,type,t0){
+    const ext=/mp4/.test(type)?'mp4':'webm',d=new Date(t0),cid=String(cam.id).replace(/[^\w-]/g,'').slice(0,24),tg=String(tag).replace(/[^\w-]/g,'').slice(0,16),name='PlateWatch_'+dkey(t0)+'_'+p2(d.getHours())+'-'+p2(d.getMinutes())+'-'+p2(d.getSeconds())+'_'+cid+'_'+tg+'.'+ext;
+    let w=null,fh=null,where='idb',pos=0,i=0,size=0,q=Promise.resolve();
+    if(this.folder){try{let ok=(await this.folder.queryPermission({mode:'readwrite'}))==='granted';if(!ok)ok=(await this.folder.requestPermission({mode:'readwrite'}))==='granted';if(ok){fh=await this.folder.getFileHandle(name,{create:true});w=await fh.createWritable();where='folder'}}catch{w=null}if(!w)toast('Could not write to the chosen folder, so this recording is kept in the browser.','err')}
+    try{await this.prune()}catch{}
+    try{await this.recStart({name,cam:cam.id,camName:cam.cfg.name,tag,t:t0,mime:type,dur:0,size:0,open:true,where})}catch{toast('This browser cannot store recordings (private mode?).','err');return null}
+    return{name,write(b){const k=i++;size+=b.size;q=q.then(async()=>{try{if(w){await w.write(b);pos+=b.size;if(k%60===59){await w.close();w=await fh.createWritable({keepExistingData:true});await w.seek(pos)}}else await DB.recChunk(name,k,b)}catch{}})},
+      close(){q=q.then(async()=>{try{if(w){await w.close();w=null}}catch{}await DB.recEnd(name,{dur:Date.now()-t0,size,n:i});DB.audit('Recording saved '+name+' ('+where+')');DB.prune().catch(()=>{})});return q}}},
+  async recBlob(r){if(r.where==='folder'){if(!this.folder)throw new Error('folder not chosen');if((await this.folder.queryPermission({mode:'read'}))!=='granted')await this.folder.requestPermission({mode:'read'});const fh=await this.folder.getFileHandle(r.name);return fh.getFile()}
+    const ch=await this.t('chunks','readonly',tx=>tx.objectStore('chunks').getAll(IDBKeyRange.bound([r.name,0],[r.name,Number.MAX_SAFE_INTEGER])));return new Blob(ch.map(x=>x.blob),{type:(r.mime||'video/webm').split(';')[0]})},
+  async recUrl(r){return URL.createObjectURL(await this.recBlob(r))},
+  async delRec(name,why){const m=await this.t('recs','readonly',tx=>tx.objectStore('recs').get(name));if(!m)return;await this.t(['recs','chunks'],'readwrite',tx=>{tx.objectStore('recs').delete(name);tx.objectStore('chunks').delete(IDBKeyRange.bound([name,0],[name,Number.MAX_SAFE_INTEGER]))});if(m.where==='folder'&&this.folder){try{await this.folder.removeEntry(name)}catch{}}this.audit('Deleted recording '+name+' ('+(why||'user')+')')},
+  async prune(){const rec=S.rec,now=Date.now();let l=(await this.t('recs','readonly',tx=>tx.objectStore('recs').getAll())).filter(r=>!r.open).sort((a,b)=>a.t-b.t);
+    if(rec.retainDays){for(const r of l.filter(r=>now-r.t>rec.retainDays*864e5))await this.delRec(r.name,'retention');const cut=now-rec.retainDays*864e5;await this.t('events','readwrite',tx=>{const rq=tx.objectStore('events').index('t').openCursor(IDBKeyRange.upperBound(cut));rq.onsuccess=()=>{const c=rq.result;if(c){c.delete();c.continue()}}});l=l.filter(r=>now-r.t<=rec.retainDays*864e5)}
+    const maxB=(rec.maxGB||0)*1e9;if(maxB){let tot=l.reduce((a,r)=>a+(r.size||0),0);for(const r of l){if(tot<=maxB)break;tot-=r.size||0;await this.delRec(r.name,'FIFO')}}
+    try{const e=await navigator.storage.estimate();if(e.quota&&e.usage/e.quota>.9){const idb=(await this.t('recs','readonly',tx=>tx.objectStore('recs').getAll())).filter(r=>!r.open&&r.where!=='folder').sort((a,b)=>a.t-b.t);for(const r of idb.slice(0,Math.max(0,idb.length-1))){await this.delRec(r.name,'browser storage nearly full');const e2=await navigator.storage.estimate();if(e2.usage/e2.quota<.8)break}}}catch{}},
+  async storage(){const l=await this.t('recs','readonly',tx=>tx.objectStore('recs').getAll()),ec=await this.t('events','readonly',tx=>tx.objectStore('events').count());let est={};try{est=await navigator.storage.estimate()}catch{}return{used:l.reduce((a,r)=>a+(r.size||0),0),recordings:l.length,events:ec,max:(S.rec.maxGB||0)*1e9,quota:est.quota||0,usage:est.usage||0}},
+  /* audit log (hash chained) */
+  audit(a){this.q=this.q.then(async()=>{const t=Date.now(),h=await sha(this.lastH+'|'+t+'|'+a);this.lastH=h;await this.t('audit','readwrite',tx=>{tx.objectStore('audit').add({t,a,h})})}).catch(()=>{});return this.q},
+  auditList(n){return this.t('audit','readonly',tx=>tx.objectStore('audit').getAll()).then(r=>r.slice(-n).reverse())},
+  async auditVerify(){const rows=await this.t('audit','readonly',tx=>tx.objectStore('audit').getAll());let prev='0';for(let i=0;i<rows.length;i++){const h=await sha(prev+'|'+rows[i].t+'|'+rows[i].a);if(h!==rows[i].h)return{ok:false,brokenAt:i+1,total:rows.length};prev=rows[i].h}return{ok:true,total:rows.length}},
+  /* optional folder for recordings (Chrome or Edge) */
+  async pickFolder(){if(!window.showDirectoryPicker){toast('Saving to a folder needs Chrome or Edge, with this page opened directly in a tab.','err');return}
+    try{this.folder=await showDirectoryPicker({mode:'readwrite',id:'plate-watch-dvr'});await this.t('kv','readwrite',tx=>{tx.objectStore('kv').put(this.folder,'dir')});audit('Recording folder chosen: '+this.folder.name);toast('New recordings will be saved to “'+this.folder.name+'”')}catch(e){if(e.name!=='AbortError')toast('Could not use that folder ('+e.name+')','err')}},
+  async clearFolder(){this.folder=null;await this.t('kv','readwrite',tx=>{tx.objectStore('kv').delete('dir')});toast('Recordings will be kept in the browser')}};
+
+'use strict';
+/* On-device AI. Free: COCO-SSD (objects), Tesseract.js (plates). Libraries are cached by the local server for offline use. */
+const AI={status:'idle',err:'',model:null,ocr:null,ocrP:null,fps:0,ms:0,frames:0,fpsT:performance.now()};
+const VEH=['car','motorcycle','bus','truck'],BAGS=['backpack','handbag','suitcase'],WEAPONS=['knife','scissors','baseball bat'];
+const OBJS=['person','bicycle','car','motorcycle','bus','truck','dog','cat',...BAGS,...WEAPONS];
+const CDN={tf:['https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js'],
+ coco:['https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js'],
+ tess:['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js']};
+async function loadScript(urls){let err;for(const u of urls){try{await new Promise((ok,no)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>no(new Error('could not load '+u.split('/').pop()));document.head.appendChild(s)});return}catch(e){err=e}}throw err}
+const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('timed out')),ms))]);
+function aiChip(){const c=$('#bAI');if(!c)return;c.textContent=AI.status==='ready'?'AI '+(AI.fps||'…')+' fps':AI.status==='loading'?'AI loading…':AI.status==='error'?'AI offline · retry':'AI';c.className='chip'+(AI.status==='ready'?' ok':AI.status==='error'?' bad':'')}
+async function aiLoad(){
+  if(AI.status==='loading'||AI.status==='ready')return AI.status==='ready';
+  AI.status='loading';AI.err='';aiChip();
+  try{if(!window.cocoSsd){await loadScript(CDN.tf);await loadScript(CDN.coco)}
+    if(window.tf&&tf.ready)await tf.ready();
+    AI.model=await cocoSsd.load({base:'lite_mobilenet_v2'});
+    AI.status='ready';aiChip();return true}
+  catch(e){AI.status='error';AI.err=String((e&&e.message)||e);aiChip();toast('AI models could not load ('+AI.err+'). They download once; check the internet, then click the AI chip.','err');return false}}
+$('#bAI').onclick=()=>{if(AI.status!=='loading'&&AI.status!=='ready'){AI.status='idle';aiLoad()}};
+
+/* ---------- colour helpers ---------- */
+function cname(r,g,b){const R=r/255,G=g/255,B=b/255,mx=Math.max(R,G,B),mn=Math.min(R,G,B),l=(mx+mn)/2,d=mx-mn,s=d===0?0:d/(1-Math.abs(2*l-1));let h=0;if(d){if(mx===R)h=((G-B)/d)%6;else if(mx===G)h=(B-R)/d+2;else h=(R-G)/d+4;h*=60;if(h<0)h+=360}
+ if(l>.8)return'white';if(l<.14)return'black';if(s<.16)return l>.55?'silver':'grey';if(h<15||h>=345)return'red';if(h<40)return l<.4?'brown':'orange';if(h<70)return'yellow';if(h<165)return'green';if(h<255)return'blue';if(h<300)return'purple';return'pink'}
+const _cc=document.createElement('canvas');_cc.width=_cc.height=16;const _cx=_cc.getContext('2d',{willReadFrequently:true});
+function colourOf(src,box,W,H,p){p=p||[.2,.35,.6,.5];try{_cx.drawImage(src,(box[0]+box[2]*p[0])*W,(box[1]+box[3]*p[1])*H,Math.max(2,box[2]*p[2]*W),Math.max(2,box[3]*p[3]*H),0,0,16,16);const d=_cx.getImageData(0,0,16,16).data;let r=0,g=0,b=0;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2]}const n=d.length/4;return cname(r/n,g/n,b/n)}catch{return''}}
+function lumOf(src){try{_cx.drawImage(src,0,0,16,16);const d=_cx.getImageData(0,0,16,16).data;let s=0;for(let i=0;i<d.length;i+=4)s+=d[i]*.3+d[i+1]*.59+d[i+2]*.11;return s/(d.length/4)}catch{return 128}}
+
+/* ---------- tracker ---------- */
+const iou=(a,b)=>{const x1=Math.max(a[0],b[0]),y1=Math.max(a[1],b[1]),x2=Math.min(a[0]+a[2],b[0]+b[2]),y2=Math.min(a[1]+a[3],b[1]+b[3]),i=Math.max(0,x2-x1)*Math.max(0,y2-y1);return i/((a[2]*a[3]+b[2]*b[3]-i)||1)};
+class Tracker{
+  constructor(cam){this.cam=cam;this.tracks=[];this.nextId=1}
+  update(dets,W,H,el){
+    const now=performance.now(),used=new Set();
+    this.tracks.forEach(t=>{let bi=0,bj=-1;dets.forEach((d,i)=>{if(used.has(i)||d.cls!==t.cls)return;const o=iou(t.target,d.box);if(o>bi){bi=o;bj=i}});
+      if(bj>=0&&bi>.12){const d=dets[bj];used.add(bj);const dtt=Math.max(.05,(now-t.seenAt)/1000),cx=d.box[0]+d.box[2]/2,cy=d.box[1]+d.box[3]/2,ix=(cx-t.cx)/dtt,iy=(cy-t.cy)/dtt;
+        t.vx=.6*t.vx+.4*ix;t.vy=.6*t.vy+.4*iy;t.speed=.6*t.speed+.4*Math.hypot(ix,iy);t.cx=cx;t.cy=cy;t.target=d.box;t.score=d.score;t.seenAt=now;t.miss=0;t.hits++;t.trail.push([cx,cy]);if(t.trail.length>16)t.trail.shift();
+        if(t.speed<.025){if(!t.still)t.still=now}else t.still=0;
+        if(!t.colour&&t.hits>=3)t.colour=colourOf(el,d.box,W,H,t.cls==='person'?[.2,.15,.6,.35]:null);
+        if(!t.announced&&t.hits>=3){t.announced=true;this.cam.onBirth(t)}}else t.miss++});
+    dets.forEach((d,i)=>{if(used.has(i))return;const cx=d.box[0]+d.box[2]/2,cy=d.box[1]+d.box[3]/2;this.tracks.push({id:this.nextId++,cls:d.cls,box:d.box.slice(),target:d.box,score:d.score,born:now,bornWall:Date.now(),appear:now,seenAt:now,miss:0,hits:1,vx:0,vy:0,speed:0,cx,cy,x0:cx,y0:cy,trail:[[cx,cy]],colour:'',plate:null,still:0,flags:{},ocrAt:0,ocrN:0,flash:0,announced:false,danger:null})});
+    const gone=this.tracks.filter(t=>t.miss>=8);gone.forEach(t=>{if(t.announced)this.cam.onDeath(t)});this.tracks=this.tracks.filter(t=>t.miss<8)}
+  live(){return this.tracks.filter(t=>t.miss<2&&t.hits>=2)}
+}
+
+/* ---------- plate reading (OCR, queued) ---------- */
+async function ocrLoad(){if(AI.ocr)return AI.ocr;if(!AI.ocrP)AI.ocrP=(async()=>{if(!window.Tesseract)await loadScript(CDN.tess);let w;
+  w=await Tesseract.createWorker('eng');
+  await w.setParameters({tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',tessedit_pageseg_mode:'11'});AI.ocr=w;return w})();
+  try{return await AI.ocrP}catch(e){AI.ocrP=null;throw e}}
+const FIXL={'0':'O','1':'I','5':'S','8':'B','2':'Z'},FIXD={O:'0',Q:'0',D:'0',I:'1',L:'1',S:'5',B:'8',Z:'2'};
+const fixUK=s=>s.split('').map((ch,i)=>[0,1,4,5,6].includes(i)?(FIXL[ch]||ch):(FIXD[ch]||ch)).join('');
+function plateFromText(raw,region){const t=String(raw||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(t.length<4)return null;
+  if(region==='uk'){for(let i=0;i+7<=t.length;i++){const f=fixUK(t.slice(i,i+7));if(/^[A-Z]{2}\d{2}[A-Z]{3}$/.test(f))return f}
+    for(let i=0;i<t.length;i++)for(const n of[7,6,5]){const f=t.slice(i,i+n);if(f.length<n)continue;if(/^[A-Z]\d{1,3}[A-Z]{3}$/.test(f)||/^[A-Z]{3}\d{1,3}[A-Z]$/.test(f))return f}return null}
+  for(let n=Math.min(8,t.length);n>=5;n--)for(let i=0;i+n<=t.length;i++){const f=t.slice(i,i+n);if(/[A-Z]/.test(f)&&/\d/.test(f))return f}return null}
+const ocrLines=d=>{if(d.lines&&d.lines.length)return d.lines;const o=[];(d.blocks||[]).forEach(b=>(b.paragraphs||[]).forEach(p=>(p.lines||[]).forEach(l=>o.push(l))));return o.length?o:[{text:d.text,confidence:d.confidence,bbox:null}]};
+async function readPlate(src,box,W,H){const w=await ocrLoad();
+  for(const z of[[0,.45,1,.55],[0,0,1,1]]){
+    const sx=Math.max(0,(box[0]+box[2]*z[0])*W),sy=Math.max(0,(box[1]+box[3]*z[1])*H),sw=Math.min(W-sx,box[2]*z[2]*W),sh=Math.min(H-sy,box[3]*z[3]*H);if(sw<24||sh<12)continue;
+    const sc=Math.min(3,Math.max(1,640/sw)),c=document.createElement('canvas');c.width=Math.round(sw*sc);c.height=Math.round(sh*sc);const x=c.getContext('2d');x.filter='grayscale(1) contrast(1.6)';x.drawImage(src,sx,sy,sw,sh,0,0,c.width,c.height);x.filter='none';
+    const res=await w.recognize(c,{},{blocks:true,text:true}),data=res.data||res;let best=null;
+    for(const ln of ocrLines(data)){const p=plateFromText(ln.text,S.ai.region);if(!p)continue;const cf=(ln.confidence==null?60:ln.confidence)/100;if(cf<.45)continue;if(!best||cf>best.cf)best={p,cf,bb:ln.bbox}}
+    if(best){const bb=best.bb||{x0:0,y0:0,x1:c.width,y1:c.height};return{plate:best.p,conf:Math.min(.99,best.cf),box:[(sx+bb.x0/sc)/W,(sy+bb.y0/sc)/H,Math.max(.01,(bb.x1-bb.x0)/sc/W),Math.max(.01,(bb.y1-bb.y0)/sc/H)]}}}
+  return null}
+const OCRQ=[];let ocrBusy=false;
+function queueOcr(cam,t){if(t.ocrQ||!S.ai.ocr)return;t.ocrQ=true;OCRQ.push({cam,t});pumpOcr()}
+async function pumpOcr(){if(ocrBusy)return;ocrBusy=true;
+  while(OCRQ.length){const{cam,t}=OCRQ.shift();try{if(t.miss>3||!cam.ready()){t.ocrQ=false;continue}const rp=await readPlate(cam.el,t.target,cam.W,cam.H);t.ocrN++;t.ocrAt=Date.now();t.ocrQ=false;if(rp&&!t.plate){t.plate=rp;cam.onPlate(t,rp)}}catch(e){t.ocrQ=false;t.ocrN=9;AI.ocrErr=String((e&&e.message)||e)}}
+  ocrBusy=false}
+
+/* ---------- scene description ---------- */
+const trackActivity=t=>{if(!t)return'';if(t.speed<.03)return'standing still';return Math.abs(t.vx)>=Math.abs(t.vy)?'moving '+(t.vx>0?'right':'left'):(t.vy>0?'moving towards the camera':'moving away')};
+const whereOf=b=>{const cx=b[0]+b[2]/2;return(cx<.34?'on the left':cx>.66?'on the right':'in the centre')+(b[3]>.55?', close to the camera':b[3]<.15?', in the distance':'')};
+const dwellText=s=>s>90?Math.round(s/60)+' minutes':Math.round(s)+' seconds';
+function describeCam(cam,detail){
+  detail=detail||S.narr.detail;const T=cam.tracker.live();
+  if(!cam.ready())return'The camera is not providing a picture.';
+  const ppl=T.filter(t=>t.cls==='person'),veh=T.filter(t=>VEH.includes(t.cls)),bags=T.filter(t=>BAGS.includes(t.cls)),weap=T.filter(t=>WEAPONS.includes(t.cls)),oth=T.filter(t=>['bicycle','dog','cat'].includes(t.cls));
+  const out=[];
+  if(!T.length)out.push('No people or vehicles are visible. The scene is quiet.');
+  else{const bits=[];if(ppl.length)bits.push(ppl.length+(ppl.length>1?' people':' person'));if(veh.length)bits.push(veh.length+(veh.length>1?' vehicles':' vehicle'));if(oth.length)bits.push([...new Set(oth.map(o=>o.cls))].join(' and '));if(bags.length)bits.push(bags.length+(bags.length>1?' bags':' bag'));out.push(bits.join(', ')+' in view.')}
+  if(weap.length)out.push('Warning: a '+[...new Set(weap.map(w=>w.cls))].join(' and ')+' has been detected.');
+  if(detail==='brief')return out.join(' ');
+  const lim=detail==='full'?6:3;
+  veh.slice(0,lim).forEach(t=>{const act=trackActivity(t),dw=(performance.now()-t.born)/1000;out.push('A '+(t.colour?t.colour+' ':'')+t.cls+' '+whereOf(t.target)+(act?' is '+act:'')+(t.plate?', registration '+fmtPlate(norm(t.plate.plate)).split('').join(' '):'')+(dw>20&&t.speed<.03?(act?' and':'')+' has been here for '+dwellText(dw):'')+'.')});
+  ppl.slice(0,lim).forEach(t=>{const act=trackActivity(t),dw=(performance.now()-t.born)/1000;out.push('A person'+(t.colour?' in a '+t.colour+' top':'')+' '+whereOf(t.target)+(act?' is '+act:'')+(dw>30?', in view for '+dwellText(dw):'')+'.')});
+  if(detail==='full'){bags.slice(0,2).forEach(t=>out.push('A '+t.cls+' is '+(t.speed<.03?'stationary ':'being carried ')+whereOf(t.target)+'.'));if(cam.lum<45)out.push('It is dark.');else if(cam.lum<90)out.push('Light levels are low.')}
+  return out.join(' ')}
+
+'use strict';
+/* Alert rules, sounds, narration (browser speech, free) and the alert pipeline */
+const KINDS={
+ weapon:{l:'Weapon-like object (knife, scissors, bat)',sev:'critical',snd:'klaxon',cool:20,rec:1,notify:1,speak:1,d:'Objects that look like weapons'},
+ plate_black:{l:'Watchlist plate (alert)',sev:'critical',snd:'siren',cool:30,rec:1,notify:1,speak:1,d:'A plate on your alert list'},
+ zone:{l:'Restricted zone entered',sev:'high',snd:'sonar',cool:15,rec:1,notify:1,speak:1,d:'Person or vehicle inside a zone you drew'},
+ bag:{l:'Unattended bag',sev:'high',snd:'descend',cool:60,rec:1,notify:1,speak:1,secs:30,dist:.25,d:'Bag left alone for N seconds'},
+ afterhours:{l:'Presence outside hours',sev:'high',snd:'bell',cool:60,rec:1,notify:1,speak:1,from:'22:00',to:'06:00',d:'People or vehicles during the night window'},
+ tamper:{l:'Camera problem',sev:'high',snd:'pulses',cool:120,rec:0,notify:1,speak:1,d:'Camera offline, frozen, or blocked'},
+ loiter:{l:'Loitering person',sev:'medium',snd:'slowpulse',cool:60,rec:1,notify:0,speak:1,secs:60,d:'Person staying in one area for N seconds'},
+ running:{l:'Fast-moving person',sev:'medium',snd:'fastpulse',cool:20,rec:1,notify:0,speak:1,speed:.35,d:'Person moving faster than the limit'},
+ crowd:{l:'Crowd gathering',sev:'medium',snd:'chord',cool:60,rec:1,notify:0,speak:1,n:4,d:'N or more people at once'},
+ plate_unknown:{l:'Unrecognised plate',sev:'low',snd:'doublebeep',cool:30,rec:0,notify:0,speak:0,d:'A plate not on any list'},
+ parked:{l:'Vehicle parked a long time',sev:'low',snd:'ding',cool:300,rec:0,notify:0,speak:0,mins:5,d:'Vehicle stationary for N minutes'},
+ person:{l:'Person detected',sev:'low',snd:'doorbell',cool:20,rec:0,notify:0,speak:0,d:'Any new person in view'},
+ plate_vip:{l:'VIP plate',sev:'info',snd:'fanfare',cool:30,rec:0,notify:0,speak:1,d:'A plate you marked VIP'},
+ plate_known:{l:'Known plate',sev:'info',snd:'chime',cool:30,rec:0,notify:0,speak:0,d:'A plate you marked as known'},
+ motion:{l:'Motion',sev:'info',snd:'tick',cool:10,rec:0,notify:0,speak:0,on:false,d:'Any movement in the picture'}};
+const SOUND_NAMES=[['klaxon','Klaxon'],['siren','Siren'],['sonar','Sonar ping'],['descend','Descending tones'],['bell','Bell'],['pulses','Low pulses'],['slowpulse','Slow pulse'],['fastpulse','Fast pulse'],['chord','Chord'],['doublebeep','Double beep'],['ding','Ding'],['doorbell','Doorbell'],['fanfare','Fanfare'],['chime','Soft chime'],['tick','Tick'],['none','Silent']];
+const rule=k=>Object.assign({on:true},KINDS[k],(S.rules&&S.rules[k])||{});
+const App={events:[],cams:[]};
+
+/* ---------- sounds ---------- */
+let AC=null;
+function ensureAudio(){try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC&&AC.state==='suspended')AC.resume()}catch{}}
+['pointerdown','keydown'].forEach(e=>document.addEventListener(e,ensureAudio));
+function playSound(name,force){
+  if(name==='none'||(!force&&!S.sound.on))return;ensureAudio();if(!AC)return;const vol=S.sound.vol;if(vol<=0)return;const t0=AC.currentTime+.03;
+  const tone=(f,st,du,type,g,f2)=>{const o=AC.createOscillator(),a=AC.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t0+st);if(f2)o.frequency.linearRampToValueAtTime(f2,t0+st+du);o.connect(a);a.connect(AC.destination);const pk=Math.max(.0002,vol*(g||1)*.35);a.gain.setValueAtTime(.0001,t0+st);a.gain.exponentialRampToValueAtTime(pk,t0+st+.015);a.gain.exponentialRampToValueAtTime(.0001,t0+st+du);o.start(t0+st);o.stop(t0+st+du+.03)};
+  const P={klaxon:()=>{for(let i=0;i<3;i++){tone(440,i*.5,.45,'sawtooth',1.1,330)}},siren:()=>{for(let i=0;i<4;i++)tone(i%2?660:880,i*.3,.28,'square',1.1)},
+   sonar:()=>{tone(1200,0,.5,'sine',1);tone(1200,.55,.5,'sine',.6)},descend:()=>{[880,660,440].forEach((f,i)=>tone(f,i*.2,.25,'triangle',1))},bell:()=>{tone(880,0,1,'sine',1);tone(1320,0,.7,'sine',.5)},
+   pulses:()=>{for(let i=0;i<3;i++)tone(220,i*.35,.3,'sawtooth',1)},slowpulse:()=>{tone(300,0,.5,'sine',1);tone(300,.7,.5,'sine',1)},fastpulse:()=>{for(let i=0;i<5;i++)tone(700,i*.12,.08,'square',.8)},
+   chord:()=>[262,330,392].forEach(f=>tone(f,0,.7,'triangle',.8)),doublebeep:()=>{tone(520,0,.12,'square',.8);tone(520,.2,.12,'square',.8)},ding:()=>tone(1046,0,.6,'sine',.9),
+   doorbell:()=>{tone(659,0,.3,'sine');tone(523,.28,.5,'sine')},fanfare:()=>[523,659,784,1047].forEach((f,i)=>tone(f,i*.12,.32,'triangle')),chime:()=>{tone(660,0,.25,'sine',.8);tone(880,.15,.4,'sine',.8)},
+   tick:()=>tone(300,0,.06,'square',.6),blipup:()=>{tone(500,0,.1,'sine',.8);tone(750,.1,.14,'sine',.8)},blipdown:()=>{tone(750,0,.1,'sine',.8);tone(500,.1,.14,'sine',.8)}};
+  try{(P[name]||function(){})()}catch{}}
+
+/* ---------- narration (Web Speech API: free, built in) ---------- */
+const SP={ok:'speechSynthesis' in window,voices:[],last:0,tick:[]};
+if(SP.ok){const lv=()=>{SP.voices=speechSynthesis.getVoices()};lv();speechSynthesis.onvoiceschanged=lv}
+function inQuiet(){const n=S.narr;if(!n.quiet)return false;const d=new Date(),m=d.getHours()*60+d.getMinutes(),f=x=>{const a=String(x).split(':');return +a[0]*60+ +a[1]},s=f(n.quietFrom),e=f(n.quietTo);return s<=e?(m>=s&&m<e):(m>=s||m<e)}
+function speak(text,prio){const n=S.narr;if(!SP.ok||!n.on||!text)return;if(inQuiet()&&(prio||0)<2)return;
+  if((prio||0)>=2)speechSynthesis.cancel();else if(speechSynthesis.pending&&(prio||0)<1)return;
+  const u=new SpeechSynthesisUtterance(text);const v=SP.voices.find(x=>x.name===n.voice);if(v){u.voice=v;u.lang=v.lang}u.rate=n.rate;u.pitch=n.pitch;u.volume=n.vol;speechSynthesis.speak(u);SP.last=Date.now()}
+function tickerPush(text){SP.tick.unshift({t:Date.now(),text});SP.tick=SP.tick.slice(0,12)}
+
+/* ---------- alert pipeline ---------- */
+const COOL={};
+const inZone=(t,z)=>t.cx>=z.x&&t.cx<=z.x+z.w&&t.cy>=z.y&&t.cy<=z.y+z.h;
+function raise(kind,o){
+  const r=rule(kind);if(!r.on)return null;const cam=o.cam,now=Date.now(),key=kind+'|'+(cam?cam.id:'')+'|'+(o.key==null?'':o.key);
+  if(now-(COOL[key]||0)<r.cool*1000)return null;COOL[key]=now;
+  const ev={id:'l'+now+Math.random().toString(36).slice(2,5),t:now,kind,sev:r.sev,cam:cam?cam.id:'',camName:cam?cam.cfg.name:'',title:o.title||r.l,text:o.text||'',plate:o.plate||'',meta:o.meta||{},notify:!!r.notify};
+  if(o.source)ev.source=o.source;if(o.fileName)ev.fileName=o.fileName;
+  if(cam){try{ev.wide=cam.snapshot(900,o.track);if(o.crop)ev.crop=o.crop}catch{}}
+  App.events.unshift(ev);App.events=App.events.slice(0,1000);
+  playSound(r.snd);
+  if(r.speak)speak(ev.text||ev.title,SEV[r.sev].n>=3?2:1);
+  tickerPush(ev.title+(cam?' · '+cam.cfg.name:''));
+  if(ev.source!=='file'){
+    if(cam&&r.rec)REC.trigger(cam,kind);
+    if(cam&&S.follow.on&&o.track)cam.flagTrack(o.track,kind);
+    DB.addEvent(ev).catch(()=>{});
+    if(S.notify.browser&&SEV[r.sev].n>=SEV[S.notify.minSev].n&&'Notification' in window&&Notification.permission==='granted'){try{const n=new Notification('PlateWatch: '+ev.title,{body:ev.text||ev.camName});n.onclick=()=>{window.focus();UI.openEvent(ev.id)}}catch{}}
+    if(ev.notify&&SEV[r.sev].n>=SEV[S.notify.minSev].n){const asc=s=>String(s).replace(/[^\x20-\x7E]/g,''),nf=S.notify;if(nf.ntfy)fetch((nf.ntfyServer||'https://ntfy.sh')+'/'+encodeURIComponent(nf.ntfy),{method:'POST',headers:{Title:asc('PlateWatch: '+ev.title),Priority:ev.sev==='critical'?'urgent':'high',Tags:'rotating_light'},body:ev.text||ev.title}).catch(()=>{});if(nf.webhook)fetch(nf.webhook,{method:'POST',mode:'no-cors',body:JSON.stringify({title:ev.title,text:ev.text,sev:ev.sev,kind:ev.kind,cam:ev.camName,t:ev.t})}).catch(()=>{})}
+  }
+  if(window.UI)UI.onEvent(ev);
+  return ev}
+
+/* ---------- rule engine (runs per camera after each detection) ---------- */
+function inWindow(from,to){const d=new Date(),m=d.getHours()*60+d.getMinutes(),f=x=>{const a=String(x).split(':');return +a[0]*60+ +a[1]},s=f(from),e=f(to);return s<=e?(m>=s&&m<e):(m>=s||m<e)}
+function evalRules(cam){
+  const T=cam.tracker.live(),now=performance.now(),ppl=T.filter(t=>t.cls==='person');
+  T.filter(t=>WEAPONS.includes(t.cls)&&t.score>=.5&&t.hits>=2).forEach(t=>{t.danger='weapon';raise('weapon',{cam,track:t,key:t.cls,title:'Weapon-like object: '+t.cls,text:'Warning. A '+t.cls+' was detected '+whereOf(t.target)+' on camera '+cam.cfg.name+'.',crop:cam.crop(t.target)})});
+  const zs=cam.cfg.zones||[];if(zs.length)T.filter(t=>t.cls==='person'||VEH.includes(t.cls)).forEach(t=>{const z=zs.find(z=>inZone(t,z));if(z){t.danger='zone';raise('zone',{cam,track:t,key:t.id+(z.name||''),title:'Restricted zone: '+(z.name||'zone'),text:'A '+t.cls+' entered '+(z.name||'a restricted zone')+' on '+cam.cfg.name+'.'})}});
+  const rb=rule('bag');BAGS.length&&T.filter(t=>BAGS.includes(t.cls)).forEach(t=>{const near=ppl.some(p=>Math.hypot(p.cx-t.cx,p.cy-t.cy)<rb.dist);if(near||!t.still){t.flags.alone=0;return}if(!t.flags.alone)t.flags.alone=now;if((now-t.flags.alone)/1000>=rb.secs){t.danger='bag';raise('bag',{cam,track:t,key:t.id,title:'Unattended '+t.cls,text:'An unattended '+t.cls+' has been left '+whereOf(t.target)+' on '+cam.cfg.name+'.',crop:cam.crop(t.target)})}});
+  const rl=rule('loiter');ppl.forEach(t=>{if((now-t.born)/1000>=rl.secs&&Math.hypot(t.cx-t.x0,t.cy-t.y0)<.2){t.danger='loiter';raise('loiter',{cam,track:t,key:t.id,title:'Loitering person',text:'A person has been in the same area for '+dwellText((now-t.born)/1000)+' on '+cam.cfg.name+'.'})}});
+  const rr=rule('running');ppl.forEach(t=>{if(t.hits>=5&&t.speed>rr.speed){t.danger='running';raise('running',{cam,track:t,key:t.id,title:'Fast-moving person',text:'A person is moving quickly '+(Math.abs(t.vx)>Math.abs(t.vy)?(t.vx>0?'to the right':'to the left'):'')+' on '+cam.cfg.name+'.'})}});
+  const rc=rule('crowd');if(ppl.length>=rc.n){if(!cam._crowd)cam._crowd=now;if(now-cam._crowd>3000)raise('crowd',{cam,key:'c',title:ppl.length+' people gathered',text:ppl.length+' people are gathered on '+cam.cfg.name+'.'})}else cam._crowd=0;
+  const rp=rule('parked');T.filter(t=>VEH.includes(t.cls)&&t.still&&(now-t.still)/1000>=rp.mins*60).forEach(t=>raise('parked',{cam,track:t,key:t.id,title:'Vehicle parked',text:'A '+(t.colour||'')+' '+t.cls+' has been parked for '+dwellText((now-t.still)/1000)+'.'}));
+}
+function onNewTrack(cam,t){
+  if(t.cls==='person'){raise('person',{cam,track:t,key:'p',title:'Person detected',text:'A person'+(t.colour?' in a '+t.colour+' top':'')+' appeared '+whereOf(t.target)+'.'})}
+  const ra=rule('afterhours');if((t.cls==='person'||VEH.includes(t.cls))&&inWindow(ra.from,ra.to)){t.danger='afterhours';raise('afterhours',{cam,track:t,key:t.id,title:'Presence outside hours',text:'A '+t.cls+' was seen '+whereOf(t.target)+' at '+tm(Date.now())+' on '+cam.cfg.name+'.'})}}
+function onPlateRead(cam,t,rp){
+  const plate=rp.plate,m=matchPlate(plate),crop=cam.crop(t.target,400),cr=cam.crop([rp.box[0],rp.box[1],rp.box[2],rp.box[3]],320);let kind='plate_unknown',lab='';
+  if(m){lab=m.w.label||'';if(m.exact){kind=m.w.type==='alert'?'plate_black':m.w.type==='vip'?'plate_vip':'plate_known'}else kind=m.w.type==='alert'?'plate_black':'plate_unknown'}
+  if(kind==='plate_black')t.danger='plate';
+  const txt=(kind==='plate_black'?'Alert. Watchlist vehicle ':kind==='plate_vip'?'VIP vehicle ':kind==='plate_known'?'Known vehicle ':'Vehicle ')+fmtPlate(plate).split('').join(' ')+(lab?', '+lab:'')+', '+(t.colour?t.colour+' ':'')+t.cls+' on '+cam.cfg.name+'.';
+  raise(kind,{cam,track:t,key:plate,plate,title:(kind==='plate_black'?'Watchlist plate ':kind==='plate_vip'?'VIP plate ':kind==='plate_known'?'Known plate ':'Plate ')+fmtPlate(plate),text:txt,crop:cr||crop,meta:{conf:rp.conf,vehicle:(t.colour||'')+' '+t.cls},source:cam._src||undefined,fileName:cam._fileName||undefined})}
+function onMotion(cam){raise('motion',{cam,key:'m',title:'Motion',text:'Motion detected on '+cam.cfg.name+'.'})}
+function onTamper(cam,msg){raise('tamper',{cam,key:msg,title:'Camera problem: '+msg,text:cam.cfg.name+': '+msg+'.'})}
+
+/* ---------- narration loop ---------- */
+function descKey(cam){return cam.tracker.live().map(t=>t.cls+(t.colour||'')+Math.round(t.cx*3)).sort().join(',')}
+function arrivalLine(cam,t,arrived){const w=whereOf(t.target).split(',')[0],nm=t.cls==='person'?'person'+(t.colour?' in a '+t.colour+' top':''):(t.colour?t.colour+' ':'')+t.cls;return arrived?'A '+nm+' has arrived '+w+'.':'The '+(t.cls==='person'?'person':(t.colour?t.colour+' ':'')+t.cls)+' has left.'}
+function narrLoop(){
+  const n=S.narr,now=Date.now();
+  App.cams.forEach(cam=>{if(cam.status!=='live')return;cam.desc=describeCam(cam,'normal');cam.descFull=describeCam(cam,n.detail);
+    if(!n.on||n.mode==='alerts')return;
+    const key=descKey(cam);
+    if(n.mode==='changes'){if(key!==cam._dk&&now-(cam._spk||0)>n.minGap*1000&&cam.tracker.live().length){cam._dk=key;cam._spk=now;speak(cam.cfg.name+'. '+cam.descFull,0)}else if(key!==cam._dk&&!cam.tracker.live().length&&cam._dk){cam._dk=key;if(now-(cam._spk||0)>n.minGap*1000){cam._spk=now;speak(cam.cfg.name+'. The scene is now clear.',0)}}}
+    else if(n.mode==='interval'&&now-(cam._spk||0)>n.interval*1000){cam._spk=now;speak(cam.cfg.name+'. '+cam.descFull,0)}
+  })}
+setInterval(narrLoop,1500);
+
+'use strict';
+/* Camera runtimes: device cameras (rear by default), IP/MJPEG/RTSP/phone cameras via the backend, tiles, boxes, auto-follow, zones, OSD */
+const trkColour=t=>{if(t.danger)return t.danger==='weapon'||t.danger==='plate'?'#ff4d4d':'#fb923c';if(t.cls==='person')return'#4da3ff';if(VEH.includes(t.cls)){if(t.plate){const m=matchPlate(t.plate.plate);if(m&&m.exact)return m.w.type==='known'?'#30d158':m.w.type==='vip'?'#bf5af2':'#ff4d4d';return'#ff9f0a'}return'#ffd60a'}if(WEAPONS.includes(t.cls))return'#ff4d4d';return'#a3a3a3'};
+const trkLabel=t=>t.cls.toUpperCase()+' #'+t.id+(t.colour?' · '+t.colour:'')+(t.plate?' · '+fmtPlate(norm(t.plate.plate)):'')+' · '+Math.round(t.score*100)+'%';
+const mc=document.createElement('canvas');mc.width=80;mc.height=60;const mctx=mc.getContext('2d',{willReadFrequently:true});
+
+class Cam{
+  constructor(cfg){this.cfg=cfg;this.id=cfg.id;this.status='off';this.paused=false;this.tracker=new Tracker(this);this.W=0;this.H=0;this.lum=128;this.desc='';this.descFull='';
+    this.view={s:1,x:0,y:0};this.vt={s:1,x:0,y:0};this.manual=false;this.pin=null;this.flag=null;this.targetId=null;this.lastTarget=0;this.motion=0;this.motionHit=false;this.prev=null;this.health='OK';this.hs={t:-1,n:0,dark:0,same:0};this.editZones=false;this.draft=null;this.stream=null;this._osd={};this._src='camera';this.build()}
+  build(){
+    const t=this.tile=document.createElement('div');t.className='tile';t.id='t-'+this.id;
+    t.innerHTML=`<div class="tz"><canvas class="ovl"></canvas></div><div class="tt"><b></b><div class="tch"></div></div>
+    <div class="tc"><button data-a="rec" class="rec" data-i="rec" title="Record on / off"></button><button data-a="snap" data-i="photo" title="Save snapshot"></button><button data-a="freeze" data-i="pause" title="Pause / resume the live picture"></button><button data-a="follow" data-i="target" title="Auto-follow objects"></button><button data-a="zout" data-i="zout" title="Zoom out"></button><button data-a="zin" data-i="zin" title="Zoom in"></button><button data-a="full" data-i="full" title="Fullscreen with on-screen display"></button></div>
+    <div class="tmsg"></div><div class="osd"><div class="o-top"></div><div class="o-feed"></div><div class="o-objs"></div><div class="o-bot"></div></div>`;
+    this.tz=$('.tz',t);this.cv=$('.ovl',t);this.nameEl=$('.tt b',t);this.chips=$('.tch',t);this.msgEl=$('.tmsg',t);this.osd=$('.osd',t);this.nameEl.textContent=this.cfg.name;hydrate(t);
+    const el=this.el=document.createElement(this.cfg.type==='device'?'video':'img');if(this.cfg.type==='device'){el.playsInline=true;el.muted=true;el.autoplay=true}el.alt='';this.tz.insertBefore(el,this.cv);
+    this.frz=document.createElement('canvas');this.frz.style.cssText='position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000';this.tz.insertBefore(this.frz,this.cv);
+    t.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b){this.action(b.dataset.a,b);return}const o=e.target.closest('[data-ev],[data-obj]');if(o){this.osdClick(o);return}if(!this.drag&&!this.editZones)this.hit(e)});
+    this.bindGestures();
+    const feed=$('.o-feed',t);feed.addEventListener('pointerdown',()=>{feed.classList.add('hold');clearTimeout(this._hold);this._hold=setTimeout(()=>feed.classList.remove('hold'),6000)});
+  }
+  bindGestures(){const t=this.tile,pt=new Map();let d0=0,s0=1,moved=0;
+    t.addEventListener('wheel',e=>{if(S.follow.on)return;e.preventDefault();const r=t.getBoundingClientRect();this.zoomAt(this.vt.s*(e.deltaY<0?1.15:1/1.15),e.clientX-r.left,e.clientY-r.top)},{passive:false});
+    t.addEventListener('dblclick',e=>{if(e.target.closest('button,.osd-i')||S.follow.on||this.editZones)return;const r=t.getBoundingClientRect();if(this.vt.s>1.05){this.vt={s:1,x:0,y:0};this.manual=false}else this.zoomAt(2.5,e.clientX-r.left,e.clientY-r.top)});
+    t.addEventListener('pointerdown',e=>{if(e.target.closest('button,.osd-i'))return;moved=0;this.drag=false;pt.set(e.pointerId,{x:e.clientX,y:e.clientY});if(this.editZones){const p=this.norm(e);this.draft={x:p[0],y:p[1],w:0,h:0,x0:p[0],y0:p[1]};t.setPointerCapture(e.pointerId);return}if(pt.size===2){const[a,b]=[...pt.values()];d0=Math.hypot(a.x-b.x,a.y-b.y);s0=this.vt.s}});
+    t.addEventListener('pointermove',e=>{const p=pt.get(e.pointerId);if(!p)return;if(this.editZones&&this.draft){const q=this.norm(e);this.draft.x=Math.min(this.draft.x0,q[0]);this.draft.y=Math.min(this.draft.y0,q[1]);this.draft.w=Math.abs(q[0]-this.draft.x0);this.draft.h=Math.abs(q[1]-this.draft.y0);return}
+      const r=t.getBoundingClientRect();if(pt.size===2){p.x=e.clientX;p.y=e.clientY;const[a,b]=[...pt.values()],d=Math.hypot(a.x-b.x,a.y-b.y);if(d0){this.drag=true;this.zoomAt(s0*d/d0,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top)}}
+      else if(this.vt.s>1.02&&!S.follow.on){moved+=Math.abs(e.clientX-p.x)+Math.abs(e.clientY-p.y);if(moved>6)this.drag=true;this.manual=true;this.vt.x+=e.clientX-p.x;this.vt.y+=e.clientY-p.y;this.view.x=this.vt.x;this.view.y=this.vt.y;p.x=e.clientX;p.y=e.clientY}});
+    ['pointerup','pointercancel'].forEach(ev=>t.addEventListener(ev,e=>{pt.delete(e.pointerId);if(this.editZones&&this.draft){const d=this.draft;this.draft=null;if(d.w>.02&&d.h>.02)UI.addZone(this,{x:d.x,y:d.y,w:d.w,h:d.h})}setTimeout(()=>this.drag=false,50)}));
+  }
+  norm(e){const r=this.tz.getBoundingClientRect(),c=this.contentRect(),ux=(e.clientX-r.left),uy=(e.clientY-r.top),s=this.tz.offsetWidth/(r.width||1);return[clamp(((ux*s-this.view.x)/this.view.s-c.x)/c.w,0,1),clamp(((uy*s-this.view.y)/this.view.s-c.y)/c.h,0,1)]}
+  hit(e){const p=this.norm(e),t=this.tracker.live().filter(t=>p[0]>=t.target[0]&&p[0]<=t.target[0]+t.target[2]&&p[1]>=t.target[1]&&p[1]<=t.target[1]+t.target[3]).sort((a,b)=>a.target[2]*a.target[3]-b.target[2]*b.target[3])[0];
+    if(t){this.pin=this.pin===t.id?null:t.id;if(this.pin){t.flash=performance.now();toast('Following '+t.cls+' #'+t.id+'. Click it again to release.')}}else this.pin=null}
+  zoomAt(ns,cx,cy){const o=this.vt.s;ns=clamp(ns,1,8);this.vt.x=cx-(cx-this.vt.x)*ns/o;this.vt.y=cy-(cy-this.vt.y)*ns/o;this.vt.s=ns;this.manual=ns>1.02;if(!this.manual)this.vt={s:1,x:0,y:0};this.view=Object.assign({},this.vt)}
+  action(a,b){
+    if(a==='rec')REC.toggle(this);
+    else if(a==='snap')this.saveSnap();
+    else if(a==='freeze')this.togglePause();
+    else if(a==='follow'){S.follow.on=!S.follow.on;saveSettings();UI.syncFollow();toast(S.follow.on?'Auto-follow on':'Auto-follow off')}
+    else if(a==='zin')this.zoomAt(this.vt.s*1.5,this.tz.offsetWidth/2,this.tz.offsetHeight/2);
+    else if(a==='zout')this.zoomAt(this.vt.s/1.5,this.tz.offsetWidth/2,this.tz.offsetHeight/2);
+    else if(a==='full')this.toggleFs()}
+  msg(t){this.msgEl.textContent=t||''}
+  /* ----- source ----- */
+  ready(){const e=this.el;if(!e)return false;if(this.cfg.type==='device'){if(e.readyState>=2&&e.videoWidth>0){this.W=e.videoWidth;this.H=e.videoHeight;return true}return false}if(e.naturalWidth>0){this.W=e.naturalWidth;this.H=e.naturalHeight;return true}return false}
+  async start(){
+    this.stop();this.status='starting';this.msg('Starting camera…');
+    if(this.cfg.type==='device')return this.startDevice();
+    const el=this.el,c=this.cfg;el.crossOrigin='anonymous';
+    el.onerror=()=>{if(this.status==='off')return;this.status='error';this.msg('Could not read this camera. It may block browsers (CORS) or use http on an https page. Retrying…');clearTimeout(this.retry);this.retry=setTimeout(()=>{if(this.status==='error')this.start()},5000)};
+    const load=()=>{el.src=c.url+(c.type==='snapshot'?(c.url.includes('?')?'&':'?')+'_='+Date.now():'')};
+    if(c.type==='snapshot'){el.onload=()=>{if(this.status!=='live'){this.status='live';this.msg('')}};load();this.poll2=setInterval(load,1000/clamp(+c.fps||4,1,15))}
+    else{load();this.poll=setInterval(()=>{if(el.naturalWidth>0&&this.status!=='live'){this.status='live';this.msg('')}},300)}}
+  async startDevice(){
+    const c=this.cfg;
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){this.fail('unsupported','getUserMedia is missing');return}
+    if(!window.isSecureContext){this.fail('insecure','The page is not a secure context');return}
+    const base={width:{ideal:1920},height:{ideal:1080}};
+    const tries=[];
+    if(c.deviceId&&String(c.deviceId).trim())tries.push({video:Object.assign({},base,{deviceId:{exact:c.deviceId}}),why:'chosen device'});
+    if(c.facing==='front')tries.push({video:Object.assign({},base,{facingMode:{exact:'user'}}),why:'front exact'});
+    else tries.push({video:Object.assign({},base,{facingMode:{exact:'environment'}}),why:'rear exact'});
+    if(c.facing==='front')tries.push({video:Object.assign({},base,{facingMode:'user'}),why:'front prefer'});
+    else tries.push({video:Object.assign({},base,{facingMode:'environment'}),why:'rear prefer'});
+    tries.push({video:Object.assign({},base),why:'any camera'});
+    tries.push({video:true,why:'default video'});
+
+    let st=null,lastErr=null,usedWhy='';
+    for(const t of tries){
+      try{
+        const p=navigator.mediaDevices.getUserMedia(Object.assign({audio:false},t.video?{video:t.video}:{}));
+        st=await Promise.race([p,new Promise((_,no)=>setTimeout(()=>no(new Error('timeout')),8000))]);
+        usedWhy=t.why;lastErr=null;break;
+      }catch(e){
+        lastErr=e;
+        if(['NotAllowedError','SecurityError','NotFoundError','DevicesNotFoundError','PermissionDeniedError'].includes(e.name))break;
+      }
+    }
+    if(!st){this.fail((lastErr&&lastErr.name)||'error',(lastErr&&lastErr.message)||'',usedWhy);return}
+    try{
+      this.stream=st;
+      this.el.srcObject=st;
+      this.el.muted=true;
+      this.el.playsInline=true;
+      await this.el.play();
+      await new Promise(ok=>{
+        if(this.el.videoWidth>0)return ok();
+        const to=setTimeout(ok,4000);
+        this.el.addEventListener('loadedmetadata',()=>{clearTimeout(to);ok()},{once:true});
+      });
+      if(this.el.videoWidth>0){this.W=this.el.videoWidth;this.H=this.el.videoHeight}
+      this.status='live';this.msg('');this.health='OK';
+      try{
+        const tr=st.getVideoTracks()[0];
+        if(tr&&tr.getCapabilities){
+          const caps=tr.getCapabilities();
+          if(caps.focusMode&&caps.focusMode.includes('continuous'))
+            await tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
+        }
+      }catch{}
+      UI.camsChanged();
+    }catch(e){
+      try{st.getTracks().forEach(t=>t.stop())}catch{}
+      this.fail(e.name||'error',e.message||'','playback');
+    }}
+  fail(n,extra,why){
+    this.status='error';
+    const sec=!window.isSecureContext;
+    const M={
+      NotAllowedError:'Camera access was blocked. Tap the address bar lock, allow the camera, then press Start again.',
+      PermissionDeniedError:'Camera access was denied. Allow the camera for this site in your browser settings.',
+      SecurityError:'The browser blocked camera access (insecure origin). Use https:// or http://localhost.',
+      NotFoundError:'No camera was found on this device.',
+      DevicesNotFoundError:'No camera was found on this device.',
+      NotReadableError:'The camera is in use by another app or tab. Close it and press Start again.',
+      OverconstrainedError:'The chosen camera is not available. Edit the camera and pick “Rear camera (default)”.',
+      AbortError:'The camera was stopped or could not be opened.',
+      unsupported:sec?'The camera needs a secure address. Use http://localhost on this device, or run the server with --https.':'This browser cannot reach the camera.',
+      timeout:'The camera did not respond in time. Another app may be using it — close it and press Start again.',
+      insecure:'This page is not https:// or localhost, so the camera is blocked. On this phone open http://localhost:PORT or run the server with --https.'
+    };
+    const base=M[n]||('Could not start the camera ('+n+').');
+    this.msg(base+(extra?('  ['+extra+']'):''));
+    console.warn('[PlateWatch] camera failed',{n,extra,why,cfg:this.cfg,secure:window.isSecureContext});
+    UI.camsChanged();
+  }
+  stop(){clearInterval(this.poll);clearInterval(this.poll2);clearTimeout(this.retry);if(REC)REC.stop(this,true);if(this.stream){this.stream.getTracks().forEach(t=>t.stop());this.stream=null}if(this.cfg.type==='device'){try{this.el.srcObject=null}catch{}}else{this.el.onerror=null;this.el.removeAttribute('src')}this.status='off';this.tracker.tracks=[]}
+  togglePause(){if(this.status!=='live')return;this.paused=!this.paused;if(this.paused){const w=this.frz;w.width=this.W;w.height=this.H;w.getContext('2d').drawImage(this.el,0,0);w.style.display='block';this.msg('Paused. Press again to resume.')}else{this.frz.style.display='none';this.msg('')}setI($('[data-a=freeze]',this.tile),this.paused?'play':'pause');$('[data-a=freeze]',this.tile).classList.toggle('on',this.paused)}
+  /* ----- images ----- */
+  frameCanvas(maxW){const w=Math.min(maxW,this.W),h=Math.round(this.H*w/this.W),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(this.el,0,0,w,h);return c}
+  snapshot(maxW,hi){if(!this.ready())return'';const c=this.frameCanvas(maxW),x=c.getContext('2d'),W=c.width,H=c.height,mask=S.privacy.mask;
+    if(mask!=='off')this.tracker.live().filter(t=>t.cls==='person').forEach(t=>pixelate(c,t.target));
+    this.tracker.live().forEach(t=>{const col=(hi&&t.id===hi.id)?'#ff4d4d':trkColour(t),b=t.target;x.strokeStyle=col;x.lineWidth=(hi&&t.id===hi.id)?5:2.5;x.strokeRect(b[0]*W,b[1]*H,b[2]*W,b[3]*H);x.font='700 '+Math.max(12,W/60)+'px monospace';const lab=trkLabel(t),tw=x.measureText(lab).width+10,ty=Math.max(0,b[1]*H-20);x.fillStyle=col;x.fillRect(b[0]*W,ty,tw,20);x.fillStyle='#000';x.fillText(lab,b[0]*W+5,ty+14)});
+    x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,H-26,W,26);x.fillStyle='#fff';x.font='13px monospace';x.fillText(this.cfg.name+' · '+dt(Date.now()),8,H-8);return c.toDataURL('image/jpeg',.8)}
+  crop(box,maxW){if(!this.ready())return'';maxW=maxW||360;const pad=.08,x=Math.max(0,box[0]-box[2]*pad),y=Math.max(0,box[1]-box[3]*pad),w=Math.min(1-x,box[2]*(1+2*pad)),h=Math.min(1-y,box[3]*(1+2*pad)),sw=w*this.W,sh=h*this.H;if(sw<4||sh<4)return'';const c=document.createElement('canvas');c.width=Math.min(maxW,Math.round(sw));c.height=Math.max(1,Math.round(c.width*sh/sw));c.getContext('2d').drawImage(this.el,x*this.W,y*this.H,sw,sh,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.82)}
+  saveSnap(){if(!this.ready())return toast('No picture to save','err');const a=document.createElement('a');a.href=this.snapshot(1920);a.download='snapshot-'+this.cfg.name.replace(/\W+/g,'_')+'-'+Date.now()+'.jpg';a.click();audit('Snapshot '+this.cfg.name)}
+  stream_(){return this.cfg.type==='device'?this.stream:this.canvasStream()}
+  canvasStream(){if(!this._cs){const c=document.createElement('canvas');c.width=this.W||1280;c.height=this.H||720;this._csC=c;this._cs=c.captureStream(8);this._csT=setInterval(()=>{if(this.ready()){if(c.width!==this.W){c.width=this.W;c.height=this.H}c.getContext('2d').drawImage(this.el,0,0)}},125)}return this._cs}
+  /* ----- AI callbacks ----- */
+  onBirth(t){onNewTrack(this,t);const line=arrivalLine(this,t,true);tickerPush(line+' · '+this.cfg.name);if(S.narr.on&&S.narr.arrivals&&S.narr.mode!=='alerts')speak(this.cfg.name+'. '+line,0);if(VEH.includes(t.cls))queueOcr(this,t)}
+  onDeath(t){const line=arrivalLine(this,t,false);tickerPush(line+' · '+this.cfg.name);if(S.narr.on&&S.narr.arrivals&&S.narr.mode!=='alerts'&&(t.cls==='person'||VEH.includes(t.cls)))speak(this.cfg.name+'. '+line,0)}
+  onPlate(t,rp){onPlateRead(this,t,rp)}
+  flagTrack(t,kind){this.flag={id:t.id,t:performance.now(),kind}}
+  /* ----- drawing and follow ----- */
+  contentRect(){const Wt=this.tz.offsetWidth,Ht=this.tz.offsetHeight;if(!this.W||!Wt)return{x:0,y:0,w:Wt||1,h:Ht||1};const s=Math.min(Wt/this.W,Ht/this.H),w=this.W*s,h=this.H*s;return{x:(Wt-w)/2,y:(Ht-h)/2,w,h}}
+  pickTarget(){const f=S.follow,now=performance.now();let c=this.tracker.live().filter(t=>f.classes.includes(t.cls));if(!c.length)return null;
+    if(this.pin){const p=c.find(t=>t.id===this.pin);if(p)return p;this.pin=null}
+    if(this.flag&&now-this.flag.t<10000){const p=c.find(t=>t.id===this.flag.id);if(p)return p}
+    const dg=c.filter(t=>t.danger);if(dg.length)return dg.sort((a,b)=>b.target[2]*b.target[3]-a.target[2]*a.target[3])[0];
+    if(f.onlyDanger)return null;
+    const area=t=>t.target[2]*t.target[3];
+    if(this.targetId){const keep=c.find(t=>t.id===this.targetId);if(keep&&now-this.lastSwitch<6000)return keep}
+    let pick;if(f.target==='person')pick=c.filter(t=>t.cls==='person').sort((a,b)=>area(b)-area(a))[0];else if(f.target==='vehicle')pick=c.filter(t=>VEH.includes(t.cls)).sort((a,b)=>area(b)-area(a))[0];else if(f.target==='largest')pick=c.sort((a,b)=>area(b)-area(a))[0];else if(f.target==='centre')pick=c.sort((a,b)=>Math.hypot(a.cx-.5,a.cy-.5)-Math.hypot(b.cx-.5,b.cy-.5))[0];else pick=c.filter(t=>t.cls==='person').sort((a,b)=>area(b)-area(a))[0]||c.sort((a,b)=>area(b)-area(a))[0];
+    if(pick&&pick.id!==this.targetId)this.lastSwitch=now;return pick}
+  updateView(){const f=S.follow,Wt=this.tz.offsetWidth,Ht=this.tz.offsetHeight;if(!Wt||!this.W)return;const r=this.contentRect();let tg=null;
+    if(f.on&&!this.paused&&this.status==='live'){tg=this.pickTarget();this.manual=false}
+    if(tg){const b=tg.box,cx=r.x+(b[0]+b[2]/2)*r.w,cy=r.y+(b[1]+b[3]/2)*r.h;let s=Math.min(Wt/(b[2]*r.w*f.pad),Ht/(b[3]*r.h*f.pad));if(f.plateZoom&&VEH.includes(tg.cls)&&!tg.plate)s*=1.25;s=clamp(s,f.minZoom,f.maxZoom);this.vt={s,x:Wt/2-s*cx,y:Ht/2-s*cy};this.lastTarget=performance.now();this.targetId=tg.id}
+    else if(f.on){this.targetId=null;if(performance.now()-this.lastTarget>f.hold*1000)this.vt={s:1,x:0,y:0}}
+    else if(!this.manual)this.vt={s:1,x:0,y:0};
+    const k=this.manual&&!f.on?1:clamp(f.smooth,.03,.5),v=this.view,t=this.vt;v.s+=(t.s-v.s)*k;v.x+=(t.x-v.x)*k;v.y+=(t.y-v.y)*k;v.x=clamp(v.x,Wt-Wt*v.s,0);v.y=clamp(v.y,Ht-Ht*v.s,0);
+    const css=v.s>1.005?`translate(${v.x.toFixed(1)}px,${v.y.toFixed(1)}px) scale(${v.s.toFixed(3)})`:'none';if(css!==this._css){this._css=css;this.tz.style.transform=css}this.tile.classList.toggle('zoomed',v.s>1.05)}
+  draw(){const c=this.cv,Wt=this.tz.offsetWidth,Ht=this.tz.offsetHeight;if(!Wt)return;if(c.width!==Wt||c.height!==Ht){c.width=Wt;c.height=Ht}const x=c.getContext('2d');x.clearRect(0,0,Wt,Ht);this.updateView();if(this.status!=='live')return;
+    const r=this.contentRect(),now=performance.now(),ui=S.ui;
+    (this.cfg.zones||[]).forEach(z=>{if(!(ui.zones!==false||this.editZones))return;x.save();x.strokeStyle='#fb923c';x.fillStyle='rgba(251,146,60,.12)';x.setLineDash([8,5]);x.lineWidth=2;const zx=r.x+z.x*r.w,zy=r.y+z.y*r.h,zw=z.w*r.w,zh=z.h*r.h;x.fillRect(zx,zy,zw,zh);x.strokeRect(zx,zy,zw,zh);x.setLineDash([]);x.fillStyle='#fb923c';x.font='700 11px monospace';x.fillText((z.name||'ZONE').toUpperCase(),zx+5,zy+14);x.restore()});
+    if(this.draft){const d=this.draft;x.strokeStyle='#22d3ee';x.lineWidth=2;x.strokeRect(r.x+d.x*r.w,r.y+d.y*r.h,d.w*r.w,d.h*r.h)}
+    if(this.motionHit&&ui.motion!==false&&this.motionBox){x.save();x.strokeStyle='#ff453a';x.setLineDash([6,4]);x.lineWidth=1.5;const m=this.motionBox;x.strokeRect(r.x+m[0]*r.w,r.y+m[1]*r.h,m[2]*r.w,m[3]*r.h);x.restore()}
+    if(ui.boxes===false)return;
+    this.tracker.tracks.forEach(t=>{for(let i=0;i<4;i++)t.box[i]+=(t.target[i]-t.box[i])*.3;
+      const X=r.x+t.box[0]*r.w,Y=r.y+t.box[1]*r.h,w=t.box[2]*r.w,h=t.box[3]*r.h,col=trkColour(t),age=Math.min(1,(now-t.appear)/350),grow=.82+.18*age,base=t.miss>0?Math.max(.25,1-t.miss*.12):age,cx=X+w/2,cy=Y+h/2,hw=w*grow/2,hh=h*grow/2,pulse=.5+.5*Math.sin(now/260+t.id),hot=(col==='#ff4d4d')&&Math.floor(now/300)%2,pinned=this.pin===t.id||this.targetId===t.id;
+      x.save();x.globalAlpha=hot?.35:base;
+      if(ui.trails!==false&&t.trail.length>1){x.strokeStyle=col;x.lineWidth=2;x.globalAlpha*=.6;x.beginPath();t.trail.forEach((p,i)=>{const px=r.x+p[0]*r.w,py=r.y+p[1]*r.h;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.globalAlpha=hot?.35:base}
+      const fl=t.flash&&now-t.flash<2000;x.strokeStyle=col;x.lineWidth=2+pulse*1.2+(fl||pinned?2:0);x.shadowColor=col;x.shadowBlur=6+pulse*8+(fl?14:0);x.strokeRect(cx-hw,cy-hh,hw*2,hh*2);x.shadowBlur=0;
+      const k=Math.min(18,hw*.6,hh*.6);x.lineWidth=4;x.beginPath();[[cx-hw,cy-hh,1,1],[cx+hw,cy-hh,-1,1],[cx-hw,cy+hh,1,-1],[cx+hw,cy+hh,-1,-1]].forEach(([px,py,dx,dy])=>{x.moveTo(px,py+dy*k);x.lineTo(px,py);x.lineTo(px+dx*k,py)});x.stroke();
+      const sy=cy-hh+((now/900+t.id*.37)%1)*hh*2;x.globalAlpha*=.5;x.lineWidth=1.5;x.beginPath();x.moveTo(cx-hw,sy);x.lineTo(cx+hw,sy);x.stroke();x.globalAlpha=hot?.35:base;
+      if(ui.labels!==false){const lab=(pinned?'◎ ':'')+trkLabel(t);x.font='700 12px ui-monospace,monospace';const tw=x.measureText(lab).width+12,ty=Math.max(0,cy-hh-20);x.fillStyle=col;x.fillRect(cx-hw,ty,tw,20);x.fillStyle='#000';x.fillText(lab,cx-hw+6,ty+14)}
+      x.restore()})}
+  /* ----- motion and health (about 4 times a second) ----- */
+  sense(){if(!this.ready()||this.paused)return;try{mctx.drawImage(this.el,0,0,80,60);const d=mctx.getImageData(0,0,80,60).data,g=new Uint8Array(4800);let sum=0;for(let i=0;i<4800;i++){g[i]=d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11;sum+=g[i]}this.lum=sum/4800;
+      let n=0,x0=80,y0=60,x1=0,y1=0;if(this.prev)for(let i=0;i<4800;i++)if(Math.abs(g[i]-this.prev[i])>28){n++;const x=i%80,y=(i/80)|0;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}
+      this.motion=n/48;const was=this.motionHit;this.motionHit=this.motion>=3;this.motionBox=this.motionHit?[x0/80,y0/60,(x1-x0)/80,(y1-y0)/60]:null;if(this.motionHit&&!was)onMotion(this);
+      this.hs.same=this.prev&&n===0&&this.motion===0?this.hs.same+1:0;this.hs.dark=this.lum<10?this.hs.dark+1:0;this.prev=g}catch{}}
+  checkHealth(){if(this.status==='off')return;let m='';if(this.status==='error')m='offline';else if(this.cfg.type==='device'&&this.stream){const tr=this.stream.getVideoTracks()[0];if(!tr||tr.readyState==='ended')m='camera disconnected'}
+    if(!m&&this.hs.same>=240)m='picture frozen';if(!m&&this.hs.dark>=240)m='picture dark or lens blocked';this.health=m||'OK';if(m&&m!==this._hw){this._hw=m;if(this.status!=='error'||this.cfg.type!=='device')onTamper(this,m)}if(!m)this._hw=''}
+  /* ----- fullscreen + OSD ----- */
+  async toggleFs(){const t=this.tile;if(t.classList.contains('fs')||t.classList.contains('pfs')){if(document.fullscreenElement)await document.exitFullscreen().catch(()=>{});t.classList.remove('pfs','fs');return}
+    try{if(t.requestFullscreen)await t.requestFullscreen();else throw 0;t.classList.add('fs')}catch{t.classList.add('pfs','fs')}this._osd={};this.updateOsd()}
+  osdClick(o){if(o.dataset.ev){this.toggleFs().then(()=>UI.openEvent(o.dataset.ev))}else if(o.dataset.obj){const t=this.tracker.tracks.find(x=>x.id===+o.dataset.obj);if(t){t.flash=performance.now();this.pin=this.pin===t.id?null:t.id}}}
+  updateOsd(){const t=this.tile;if(!t.classList.contains('fs'))return;const O=this._osd,set=(k,el,html)=>{if(O[k]!==html){O[k]=html;el.innerHTML=html}},now=new Date(),live=this.tracker.live(),ppl=live.filter(x=>x.cls==='person').length,veh=live.filter(x=>VEH.includes(x.cls)).length,rec=REC.state(this);
+    const al=App.events.filter(e=>SEV[e.sev].n>=1).length;
+    set('top',$('.o-top',t),`<div class="o-clock osd-i"><b>${tm(now)}</b><span>${esc(now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</span><span>${esc(this.cfg.name)} · ${this.status==='live'?(rec?'<i class="rc">● REC '+rec+'</i>':'LIVE'):this.status.toUpperCase()}${this.paused?' · PAUSED':''}${S.follow.on?' · FOLLOW':''}</span><span style="opacity:.7">${AI.status==='ready'?AI.fps+' fps · '+AI.ms+' ms':'AI '+AI.status} · zoom ${this.view.s.toFixed(1)}× · motion ${this.motion.toFixed(1)}%</span></div><div class="o-stats"><div><b>${ppl}</b>PEOPLE</div><div><b>${veh}</b>VEHICLES</div><div><b>${al}</b>ALERTS</div></div>`);
+    const evs=App.events.slice(0,16),sig=evs.map(e=>e.id).join();if(O.fsig!==sig){O.fsig=sig;const rows=evs.map(e=>`<div class="o-al osd-i${now-e.t<10000?' new':''}" style="--c:${SEV[e.sev].c}" data-ev="${esc(e.id)}"><div><b>${esc(e.title)}</b><small>${tm(e.t)} · ${esc(e.camName||'file')} · ${SEV[e.sev].l}</small></div></div>`).join('');$('.o-feed',t).innerHTML=evs.length?`<div class="roll" style="--d:${Math.max(18,evs.length*5)}s">${rows}${evs.length>4?rows:''}</div>`:'<div class="o-al" style="--c:#34d399"><div><b>No alerts yet</b><small>Everything is quiet</small></div></div>'}
+    set('objs',$('.o-objs',t),live.slice(-5).reverse().map(x=>`<div class="osd-i" data-obj="${x.id}"><b>${esc(x.cls)} #${x.id}</b>${x.colour?' · '+esc(x.colour):''}${x.plate?' · <u>'+esc(fmtPlate(norm(x.plate.plate)))+'</u>':''} · ${Math.round((performance.now()-x.born)/1000)}s</div>`).join(''));
+    const tk=SP.tick.map(x=>tm(x.t)+'  '+x.text).join('   •   ');set('bot',$('.o-bot',t),`<div class="o-desc">${esc(this.descFull||'Waiting for the first scene description…')}</div><div class="o-tick"><span style="--d:${Math.max(25,tk.length/4)}s">${esc(tk||'Narration and alerts will scroll here.')}</span></div>`)}
+  flashFlag(ev){if(!this.tile.classList.contains('fs'))return;const d=document.createElement('div');d.className='o-flag osd-i';d.style.setProperty('--c',SEV[ev.sev].c);d.dataset.ev=ev.id;d.textContent='⚠ '+ev.title+' — tap to view';this.osd.appendChild(d);setTimeout(()=>d.remove(),7000)}
+  setChips(){const rec=REC.state(this),cur=(rec?'<span class="r">● REC '+rec+'</span>':'')+(this.status==='live'?'':'<span>'+esc(this.status.toUpperCase())+'</span>')+(S.follow.on?'<span class="a">FOLLOW</span>':'')+(this.motionHit?'<span>MOTION</span>':'')+(this.health!=='OK'&&this.status!=='off'?'<span class="r">'+esc(this.health)+'</span>':'');if(cur!==this._chips){this._chips=cur;this.chips.innerHTML=cur}$('[data-a=rec]',this.tile).classList.toggle('on',!!rec);$('[data-a=follow]',this.tile).classList.toggle('on',!!S.follow.on)}
+}
+function pixelate(c,b){const W=c.width,H=c.height,x=b[0]*W,y=b[1]*H,w=Math.max(2,b[2]*W),h=Math.max(2,b[3]*H),s=document.createElement('canvas');s.width=Math.max(2,Math.round(w/8));s.height=Math.max(2,Math.round(h/8));s.getContext('2d').drawImage(c,x,y,w,h,0,0,s.width,s.height);const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(s,0,0,s.width,s.height,x,y,w,h);g.imageSmoothingEnabled=true}
+
+/* ---------- global loops ---------- */
+let rr=0;
+async function aiLoop(){const t0=performance.now();
+  try{if(AI.status==='ready'){const act=App.cams.filter(c=>c.status==='live'&&c.cfg.detect!==false&&!c.paused&&c.ready());
+    if(act.length){const cam=act[rr++%act.length],preds=await AI.model.detect(cam.el,25,S.ai.minScore);AI.ms=Math.round(performance.now()-t0);
+      const dets=preds.filter(p=>OBJS.includes(p.class)).map(p=>({cls:p.class,score:p.score,box:[p.bbox[0]/cam.W,p.bbox[1]/cam.H,p.bbox[2]/cam.W,p.bbox[3]/cam.H]}));
+      cam.tracker.update(dets,cam.W,cam.H,cam.el);AI.frames++;const el=performance.now()-AI.fpsT;if(el>2000){AI.fps=+(AI.frames/(el/1000)).toFixed(1);AI.frames=0;AI.fpsT=performance.now();aiChip()}
+      evalRules(cam);const now=Date.now();cam.tracker.live().forEach(t=>{if(VEH.includes(t.cls)&&!t.plate&&t.ocrN<4&&t.hits>=4&&now-t.ocrAt>3000&&t.target[2]*cam.W>80)queueOcr(cam,t)})}}}catch(e){}
+  setTimeout(aiLoop,Math.max(10,1000/S.ai.fps-(performance.now()-t0)))}
+function frameLoop(){App.cams.forEach(c=>c.draw());if(window.PBFile)PBFile.draw();requestAnimationFrame(frameLoop)}
+setInterval(()=>App.cams.forEach(c=>c.sense()),250);
+setInterval(()=>App.cams.forEach(c=>{c.checkHealth();c.setChips();c.updateOsd()}),500);
+document.addEventListener('fullscreenchange',()=>{App.cams.forEach(c=>{if(!document.fullscreenElement&&c.tile.classList.contains('fs')&&!c.tile.classList.contains('pfs'))c.tile.classList.remove('fs')});if(!document.fullscreenElement)$('#player').classList.remove('fs')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){App.cams.forEach(c=>{if(c.tile.classList.contains('pfs'))c.tile.classList.remove('pfs','fs')});$('#player').classList.remove('fs')}});
+
+'use strict';
+/* Recording: continuous (files of up to 30 minutes), motion, alert (with pre/post roll) and manual. */
+const pickType=()=>['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'].find(t=>window.MediaRecorder&&MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(t))||'';
+const REC={S:new Map(),
+  st(cam){let s=this.S.get(cam.id);if(!s){s={cam,rec:false,t0:0,tag:'',mr:null,sk:null,timer:null,manual:false,hold:false,evt:null,ring:{mr:null,hdr:null,q:[],type:''}};this.S.set(cam.id,s)}return s},
+  mode(cam){return cam.cfg.rec&&cam.cfg.rec!=='inherit'?cam.cfg.rec:S.rec.mode},
+  state(cam){const s=this.S.get(cam.id);return s&&s.rec?fdur((Date.now()-s.t0)/1000):''},
+  openSink(cam,tag,type,t0){return DB.openSink(cam,tag,type,t0)},
+  async startSeg(cam,tag,ms){
+    const s=this.st(cam);if(s.rec)return;const src=cam.stream_();if(!src||!window.MediaRecorder){toast('Recording is not supported in this browser','err');return}
+    s.rec=true;const mt=pickType();let mr;try{mr=new MediaRecorder(src,Object.assign({videoBitsPerSecond:S.rec.bitrate},mt?{mimeType:mt}:{}))}catch{s.rec=false;toast('Could not start recording','err');return}
+    const t0=Date.now(),sk=await this.openSink(cam,tag,(mr.mimeType||mt||'video/webm').split(';')[0],t0);if(!sk){s.rec=false;return}
+    mr.ondataavailable=e=>{if(e.data&&e.data.size)sk.write(e.data)};mr.onstop=()=>{clearTimeout(s.timer);sk.close().then(()=>{s.rec=false;s.mr=null;s.sk=null;UI.recChanged();playSound('blipdown')})};
+    s.mr=mr;s.sk=sk;s.t0=t0;s.tag=tag;s.evt=null;mr.start(2000);playSound('blipup');audit('Recording started: '+cam.cfg.name+' ('+tag+')');UI.recChanged();
+    s.timer=setTimeout(()=>this.stopSeg(cam),ms||Math.min(30,S.rec.seg)*60000)},
+  stopSeg(cam){const s=this.S.get(cam.id);if(!s)return;clearTimeout(s.timer);if(s.mr&&s.mr.state!=='inactive')s.mr.stop()},
+  ringStart(cam){const s=this.st(cam);if(s.ring.mr)return;const src=cam.stream_();if(!src||!window.MediaRecorder)return;const mt=pickType();let mr;try{mr=new MediaRecorder(src,Object.assign({videoBitsPerSecond:S.rec.bitrate},mt?{mimeType:mt}:{}))}catch{return}
+    s.ring={mr,hdr:null,q:[],type:(mr.mimeType||mt||'video/webm').split(';')[0]};
+    mr.ondataavailable=e=>{const b=e.data;if(!b||!b.size)return;if(!s.ring.hdr){s.ring.hdr=b;return}if(s.evt)s.evt.sk.write(b);else{s.ring.q.push(b);while(s.ring.q.length>Math.max(1,S.rec.pre))s.ring.q.shift()}};mr.start(1000)},
+  ringStop(cam){const s=this.S.get(cam.id);if(!s)return;try{if(s.ring.mr&&s.ring.mr.state!=='inactive')s.ring.mr.stop()}catch{}s.ring={mr:null,hdr:null,q:[],type:''}},
+  async eventClip(cam,tag){const s=this.st(cam);if(s.rec)return;s.rec=true;const pre=Math.min(S.rec.pre,s.ring.q.length),t0=Date.now()-pre*1000,sk=await this.openSink(cam,tag,s.ring.type||'video/webm',t0);if(!sk){s.rec=false;return}
+    [s.ring.hdr,...s.ring.q].forEach(b=>sk.write(b));s.ring.q=[];s.t0=t0;s.tag=tag;s.evt={sk,tm:0};this.extend(s);playSound('blipup');audit('Event clip started: '+cam.cfg.name+' ('+tag+')');UI.recChanged()},
+  endEvt(s,force){const e=s.evt;if(!e||(s.manual&&!force))return;s.evt=null;clearTimeout(e.tm);e.sk.close().then(()=>{s.rec=false;UI.recChanged();playSound('blipdown')})},
+  extend(s){if(s.manual)return;const ms=S.rec.post*1000;if(s.evt){clearTimeout(s.evt.tm);s.evt.tm=setTimeout(()=>this.endEvt(s),ms)}else if(s.timer&&s.tag!=='continuous'&&s.tag!=='manual'){clearTimeout(s.timer);s.timer=setTimeout(()=>this.stopSeg(s.cam),ms)}},
+  trigger(cam,kind){const mode=this.mode(cam);if(mode==='off'||cam.status!=='live')return;const s=this.st(cam),tag=kind==='motion'?'motion':'alert';
+    if(s.rec){this.extend(s);return}
+    if(S.rec.pre>0&&s.ring.mr&&s.ring.hdr)this.eventClip(cam,tag);else this.startSeg(cam,tag,S.rec.post*1000)},
+  toggle(cam){const s=this.st(cam);if(s.rec&&!s.manual){s.manual=true;s.hold=false;s.tag='manual';if(s.evt)clearTimeout(s.evt.tm);else{clearTimeout(s.timer);s.timer=setTimeout(()=>this.stopSeg(cam),Math.min(30,S.rec.seg)*60000)}toast('Recording until you stop it');UI.recChanged()}else if(s.rec){s.manual=false;s.hold=true;this.stop(cam)}else{if(cam.status!=='live'){toast('Start the camera first','err');return}s.manual=true;s.hold=false;this.startSeg(cam,'manual')}},
+  stop(cam,full){const s=this.S.get(cam.id);if(!s)return;if(s.evt)this.endEvt(s,true);this.stopSeg(cam);if(full){s.manual=false;this.ringStop(cam)}},
+  tick(){App.cams.forEach(cam=>{const s=this.st(cam),live=cam.status==='live'&&cam.ready(),mode=this.mode(cam),evm=['motion','alert'].includes(mode)&&S.rec.pre>0;
+    if(live&&evm&&!s.ring.mr)this.ringStart(cam);if(s.ring.mr&&!(live&&evm))this.ringStop(cam);if(!live)return;
+    if(!s.rec&&!s.hold&&(mode==='continuous'||s.manual))this.startSeg(cam,s.manual?'manual':'continuous');
+    if(mode==='motion'&&(cam.motionHit||cam.tracker.live().some(t=>t.cls==='person'||VEH.includes(t.cls))))this.trigger(cam,'motion')})}};
+setInterval(()=>REC.tick(),1000);
+addEventListener('pagehide',()=>{App.cams.forEach(c=>{try{REC.stop(c)}catch{}})});
+
+'use strict';
+/* DVR playback + local file playback with optional on-device AI, rules, narration and fullscreen OSD controls. */
+const PB={cam:'',day:'',recs:[],evs:[],win:[0,0],t:0,cur:null,off:0,speed:1,drag:false,wasPlaying:false,hover:null,v:null,lastSeek:0,SPEEDS:[.25,.5,1,2,4,8,16],files:[],fileIdx:-1};
+const TAGC={motion:'#4da3ff',alert:'#ff6b5e',continuous:'#9aa4b5',manual:'#34d399'};
+const dayStart=k=>{const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d).getTime()};
+function pbMsg(t){$('#pbMsg').textContent=t||''}
+function pbFill(){const s=$('#pbCam');const cur=PB.cam||s.value;s.innerHTML=App.cams.map(c=>`<option value="${esc(c.id)}">${esc(c.cfg.name)}</option>`).join('');PB.cam=App.cams.some(c=>c.id===cur)?cur:(App.cams[0]&&App.cams[0].id)||'';s.value=PB.cam;if(!PB.day){PB.day=dkey(Date.now());$('#pbDay').value=PB.day}}
+async function pbLoad(keep){
+  if(!PB.cam)return;const t0=dayStart(PB.day),t1=t0+864e5;
+  try{PB.recs=await DB.recs(PB.cam,t0,t1);
+    PB.evs=(await DB.events({cam:PB.cam,since:t0,until:t1,limit:600})).reverse()}catch{PB.recs=[];PB.evs=[]}
+  if(!keep){PB.win=[t0,t1];if(!PB.t||PB.t<t0||PB.t>t1)PB.t=PB.recs.length?PB.recs[0].t:t0}
+  const info=PB.recs.length?PB.recs.length+' recording'+(PB.recs.length>1?'s':'')+' · '+fsize(PB.recs.reduce((a,r)=>a+(r.size||0),0))+' · '+PB.evs.length+' alert'+(PB.evs.length===1?'':'s'):'No recordings for this day.';
+  $('#pbInfo').textContent=info;$('#pbInfoFs').textContent=info;
+  if(!PB.recs.length)pbMsg('No recordings for this camera on this day.');else if(!PB.cur)pbMsg('Click the timeline to start playing.')}
+const segAt=t=>PB.recs.find(r=>t>=r.t&&t<=r.t+(r.dur||0)+400),nextSeg=t=>PB.recs.find(r=>r.t>t);
+function fixDur(v){if(v.duration===Infinity){const done=()=>{v.removeEventListener('timeupdate',done);v.currentTime=PB.off||0;PB.off=0};v.addEventListener('timeupdate',done);v.currentTime=1e101}}
+function pbSeek(t,play){
+  let r=segAt(t),off=0;if(r)off=Math.max(0,(t-r.t)/1000);else{r=nextSeg(t)||PB.recs[PB.recs.length-1];if(!r){pbMsg('No recordings to play.');return}off=t<r.t?0:Math.max(0,(r.dur||0)/1000-1)}
+  PB.t=r.t+off*1000;pbMsg('');const v=PB.v;PB._play=play!==false;
+  if(PB.cur&&PB.cur.name===r.name&&v.readyState>0){v.currentTime=off}else{PB.cur=r;PB.off=off;PB.loading=r.name;pbMsg('Opening recording…');DB.recUrl(r).then(u=>{if(PB.loading!==r.name){URL.revokeObjectURL(u);return}if(PB.url)URL.revokeObjectURL(PB.url);PB.url=u;v.src=u;v.playbackRate=PB.speed;if(PB._play)v.play().catch(()=>{})}).catch(()=>pbMsg('This recording could not be opened (is the save folder still available?).'));return}
+  if(play!==false)v.play().catch(()=>{})}
+function pbEvents(){return PB.evs}
+function pbJumpEvent(dir){const t=PB.t,l=pbEvents();const ev=dir>0?l.find(e=>e.t>t+1500):[...l].reverse().find(e=>e.t<t-4500);if(!ev){toast(dir>0?'No later alerts today':'No earlier alerts today');return}pbSeek(ev.t-3000,true)}
+function pbSpeed(d){let i=PB.SPEEDS.indexOf(PB.speed);i=clamp(i+d,0,PB.SPEEDS.length-1);PB.speed=PB.SPEEDS[i];PB.v.playbackRate=PB.speed;$('#tSpeed').textContent=PB.speed+'×'}
+function pbToggle(){const v=PB.v;if(!PB.cur&&PB.fileIdx<0){pbSeek(PB.t,true);return}v.paused?v.play().catch(()=>{}):v.pause()}
+const pbHold=(id,dir)=>{const b=$(id);if(!b)return;let t,iv,held=false;const end=()=>{clearTimeout(t);clearInterval(iv)};b.onpointerdown=()=>{held=false;end();t=setTimeout(()=>{held=true;iv=setInterval(()=>{if(PB.fileIdx>=0)PB.v.currentTime+=dir*PB.speed*2;else pbSeek(PB.t+dir*PB.speed*900,!PB.v.paused)},120)},450)};['pointerup','pointerleave','pointercancel'].forEach(e=>b.addEventListener(e,end));b.onclick=()=>{if(held){held=false;return}if(PB.fileIdx>=0){PB.v.currentTime+=dir*10;return}pbSeek(PB.t+dir*10000,!PB.v.paused||true)}};
+
+/* ---------- AI on opened file ---------- */
+const PBFile={cam:null,tracker:null,running:false,lastAt:0,path:''};
+function pbFileEnsure(){
+  if(PBFile.tracker)return;
+  // Pseudo-camera so Tracker and rules can talk to it.
+  const self=PBFile;
+  PBFile.cam={
+    id:'file',
+    cfg:{name:'File',zones:[]},
+    _src:'file',
+    _fileName:'',
+    W:0,H:0,
+    ready(){const v=PB.v;return !!(v&&v.videoWidth>0)},
+    snapshot(){return''},
+    crop(){return''},
+    onBirth(t){const line=arrivalLine(this,t,true);tickerPush(line+' · file');if(S.narr.on&&S.narr.arrivals&&S.narr.mode!=='alerts')speak('File. '+line,0);if(VEH.includes(t.cls))queueOcr(this,t)},
+    onDeath(t){const line=arrivalLine(this,t,false);tickerPush(line+' · file');if(S.narr.on&&S.narr.arrivals&&S.narr.mode!=='alerts'&&(t.cls==='person'||VEH.includes(t.cls)))speak('File. '+line,0)},
+    onPlate(t,rp){
+      // reuse plate rule but tag source=file
+      const origCam={...this};
+      onPlateRead(this,t,rp);
+    }
+  };
+  PBFile.tracker=new Tracker(PBFile.cam);
+}
+async function pbFileTick(){
+  if(AI.status!=='ready')return;
+  if(PB.fileIdx<0)return;
+  if(!$('#pbAnalyse').classList.contains('on'))return;
+  const v=PB.v;if(!v||v.paused||v.videoWidth===0)return;
+  const now=performance.now();
+  if(now-PBFile.lastAt<1000/Math.max(1,S.ai.fps))return;
+  PBFile.lastAt=now;
+  pbFileEnsure();
+  const cam=PBFile.cam;cam.W=v.videoWidth;cam.H=v.videoHeight;cam._fileName=PB.files[PB.fileIdx]?PB.files[PB.fileIdx].name:'file';
+  try{
+    const t0=performance.now();
+    const preds=await AI.model.detect(v,25,S.ai.minScore);
+    AI.ms=Math.round(performance.now()-t0);
+    const dets=preds.filter(p=>OBJS.includes(p.class)).map(p=>({cls:p.class,score:p.score,box:[p.bbox[0]/cam.W,p.bbox[1]/cam.H,p.bbox[2]/cam.W,p.bbox[3]/cam.H]}));
+    PBFile.tracker.update(dets,cam.W,cam.H,v);
+    evalRules(cam);
+    const tt=Date.now();
+    PBFile.tracker.live().forEach(t=>{if(VEH.includes(t.cls)&&!t.plate&&t.ocrN<4&&t.hits>=4&&tt-t.ocrAt>3000&&t.target[2]*cam.W>80)queueOcr(cam,t)});
+    // scene description
+    cam.descFull=describeCam(cam,S.narr.detail);
+    cam.lum=(()=>{try{return lumOf(v)}catch{return 128}})();
+    // narration
+    const n=S.narr;
+    if(n.on&&n.mode!=='alerts'){
+      const key=PBFile.tracker.live().map(t=>t.cls+(t.colour||'')+Math.round(t.cx*3)).sort().join(',');
+      if(n.mode==='changes'&&key!==cam._dk&&PBFile.tracker.live().length){cam._dk=key;speak('File. '+cam.descFull,0)}
+      else if(n.mode==='interval'&&Date.now()-(cam._spk||0)>n.interval*1000){cam._spk=Date.now();speak('File. '+cam.descFull,0)}
+    }
+  }catch(e){}
+}
+function pbFileDraw(){
+  if(PB.fileIdx<0)return;
+  const v=PB.v;if(!v||!v.videoWidth)return;
+  const player=$('#player'),osd=$('#pbOsd');if(!player.classList.contains('fs'))return;
+  // draw boxes on a canvas overlay
+  if(!PBFile.canvas){
+    PBFile.canvas=document.createElement('canvas');
+    PBFile.canvas.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5';
+    player.insertBefore(PBFile.canvas,osd);
+  }
+  pbFileEnsure();
+  const c=PBFile.canvas,rect=player.getBoundingClientRect();
+  const cw=rect.width,chh=rect.height;
+  if(c.width!==cw||c.height!==chh){c.width=cw;c.height=chh}
+  const g=c.getContext('2d');g.clearRect(0,0,cw,chh);
+  // compute letterbox
+  const va=v.videoWidth,vb=v.videoHeight;
+  const scale=Math.min(cw/va,chh/vb),dw=va*scale,dh=vb*scale,ox=(cw-dw)/2,oy=(chh-dh)/2;
+  PBFile.tracker.tracks.forEach(t=>{
+    const b=t.box,X=ox+b[0]*dw,Y=oy+b[1]*dh,W=b[2]*dw,H=b[3]*dh,col=trkColour(t);
+    g.strokeStyle=col;g.lineWidth=2;g.strokeRect(X,Y,W,H);
+    g.fillStyle=col;g.font='700 12px ui-monospace,monospace';
+    const lab=trkLabel(t),tw=g.measureText(lab).width+10;
+    const ty=Math.max(0,Y-18);
+    g.fillRect(X,ty,tw,18);g.fillStyle='#000';g.fillText(lab,X+5,ty+13);
+  });
+}
+function pbOsdUpdate(){
+  if(PB.fileIdx<0)return;
+  const player=$('#player');if(!player.classList.contains('fs'))return;
+  pbFileEnsure();
+  const cam=PBFile.cam,now=new Date();
+  const live=PBFile.tracker?PBFile.tracker.live():[];
+  const ppl=live.filter(x=>x.cls==='person').length,veh=live.filter(x=>VEH.includes(x.cls)).length;
+  const al=App.events.filter(e=>e.source==='file'&&e.fileName===cam._fileName).length;
+  const f=PB.files[PB.fileIdx];
+  $('#pbOsd .o-top').innerHTML=`<div class="o-clock"><b>${tm(now)}</b><span>${esc(f?f.name:'file')}</span><span>FILE · ${PB.v.paused?'PAUSED':'PLAYING'} · ${PB.v.currentTime.toFixed(1)}s / ${isFinite(PB.v.duration)?PB.v.duration.toFixed(1)+'s':'?'}</span><span style="opacity:.7">${AI.status==='ready'?AI.fps+' fps · '+AI.ms+' ms':'AI '+AI.status}</span></div><div class="o-stats"><div><b>${ppl}</b>PEOPLE</div><div><b>${veh}</b>VEHICLES</div><div><b>${al}</b>ALERTS</div></div>`;
+  const evs=App.events.filter(e=>e.source==='file'&&e.fileName===cam._fileName).slice(0,16);
+  $('#pbOsd .o-feed').innerHTML=evs.length?`<div class="roll" style="--d:${Math.max(18,evs.length*5)}s">${evs.map(e=>`<div class="o-al${now-e.t<10000?' new':''}" style="--c:${SEV[e.sev].c}"><div><b>${esc(e.title)}</b><small>${tm(e.t)} · ${SEV[e.sev].l}</small></div></div>`).join('')}</div>`:'<div class="o-al" style="--c:#34d399"><div><b>No alerts on this file yet</b><small>Analysis runs while it plays</small></div></div>';
+  $('#pbOsd .o-objs').innerHTML=live.slice(-5).reverse().map(x=>`<div><b>${esc(x.cls)} #${x.id}</b>${x.colour?' · '+esc(x.colour):''}${x.plate?' · <u>'+esc(fmtPlate(norm(x.plate.plate)))+'</u>':''} · ${Math.round((performance.now()-x.born)/1000)}s</div>`).join('');
+  const tk=SP.tick.map(x=>tm(x.t)+'  '+x.text).join('   •   ');
+  $('#pbOsd .o-bot').innerHTML=`<div class="o-desc">${esc(cam.descFull||'Waiting for the first scene description…')}</div><div class="o-tick"><span style="--d:${Math.max(25,tk.length/4)}s">${esc(tk||'Narration and alerts will scroll here.')}</span></div>`;
+  $('#pbInfoFs').textContent=(f?f.name:'file')+' · '+fdur(PB.v.currentTime)+' / '+(isFinite(PB.v.duration)?fdur(PB.v.duration):'—');
+}
+setInterval(pbOsdUpdate,500);
+setInterval(()=>{try{pbFileTick()}catch{}},100);
+
+/* ---------- file list ---------- */
+function renderFileList(){
+  const fileList=$('#pbFileList');if(!fileList)return;
+  fileList.style.display=PB.files.length>1?'':'none';
+  fileList.innerHTML=PB.files.map((f,i)=>`<option value="${i}"${i===PB.fileIdx?' selected':''}>${esc(f.name)}</option>`).join('');
+}
+function playFile(i){
+  const f=PB.files[i];if(!f)return;
+  PB.fileIdx=i;
+  PB.cur=null;
+  if(PB.url){URL.revokeObjectURL(PB.url);PB.url=null}
+  PB.url=f.url;
+  const v=PB.v;
+  v.src=f.url;
+  v.playbackRate=PB.speed;
+  pbMsg('');
+  v.play().catch(()=>{});
+  $('#pbInfo').textContent='Local file: '+f.name+' · '+fsize(f.size);
+  $('#pbInfoFs').textContent='Local file: '+f.name+' · '+fsize(f.size);
+  $('#pbCam').disabled=true;$('#pbDay').disabled=true;
+  renderFileList();
+  // reset file analysis state
+  if(PBFile.tracker){PBFile.tracker=null;PBFile.cam=null}
+  // draw canvas will be created on demand
+  const p=$('#player');const old=p.querySelector('canvas');if(old)old.remove();PBFile.canvas=null;
+}
+function restoreDvr(){
+  PB.fileIdx=-1;PB.cur=null;
+  if(PB.url){URL.revokeObjectURL(PB.url);PB.url=null}
+  PB.v.removeAttribute('src');
+  $('#pbCam').disabled=false;$('#pbDay').disabled=false;
+  renderFileList();
+  pbLoad().then(()=>pbMsg('Click the timeline to start playing.'));
+  if(PBFile.tracker){PBFile.tracker=null;PBFile.cam=null}
+  const p=$('#player');const old=p.querySelector('canvas');if(old)old.remove();PBFile.canvas=null;
+  p.classList.remove('fs');
+}
+function pbInit(){
+  const v=PB.v=$('#pbVideo');
+  v.addEventListener('play',()=>{setI($('#tPlay'),'pause')});v.addEventListener('pause',()=>{setI($('#tPlay'),'play')});v.addEventListener('waiting',()=>pbMsg('Buffering…'));v.addEventListener('playing',()=>pbMsg(''));v.addEventListener('canplay',()=>pbMsg(''));
+  v.addEventListener('loadedmetadata',()=>{if(v.duration===Infinity)fixDur(v);else{if(PB.off){v.currentTime=PB.off;PB.off=0}}v.playbackRate=PB.speed});
+  v.addEventListener('error',()=>pbMsg('This recording could not be played.'));
+  v.addEventListener('ended',()=>{
+    if(PB.fileIdx>=0){
+      if(PB.fileIdx<PB.files.length-1){playFile(PB.fileIdx+1);return}
+      pbMsg('End of opened file.');
+      return;
+    }
+    const c=PB.cur;if(!c)return;const n=nextSeg(c.t+(c.dur||0)-1);if(n)pbSeek(n.t,true);else pbMsg('End of recordings for today.');
+  });
+  v.addEventListener('timeupdate',()=>{if(PB.cur&&!PB.drag)PB.t=PB.cur.t+v.currentTime*1000});
+  v.addEventListener('timeupdate',()=>{
+    if(PB.fileIdx<0)return;
+    const f=PB.files[PB.fileIdx];
+    $('#pbTime').textContent=(f?f.name+' · ':'')+fdur(v.currentTime)+' / '+(isFinite(v.duration)?fdur(v.duration):'—');
+  });
+  $('#pbCam').onchange=()=>{PB.cam=$('#pbCam').value;restoreDvr()};
+  $('#pbDay').onchange=()=>{PB.day=$('#pbDay').value||dkey(Date.now());PB.t=0;restoreDvr()};
+  $('#pbLive').onclick=()=>UI.go('live');
+
+  const fileEl=$('#pbFile'),fileList=$('#pbFileList');
+  fileEl.onchange=()=>{
+    const fs=[...fileEl.files];if(!fs.length)return;
+    fs.forEach(f=>PB.files.push({file:f,name:f.name,url:URL.createObjectURL(f),size:f.size}));
+    fileEl.value='';
+    renderFileList();
+    playFile(PB.files.length-1);
+    toast(fs.length+' file'+(fs.length>1?'s':'')+' opened');
+  };
+  fileList.onchange=()=>playFile(+fileList.value);
+
+  // Fullscreen button
+  const fsBtn=$('#tFs');
+  fsBtn.onclick=()=>togglePlayerFs();
+  // Analyse toggle
+  const anBtn=$('#pbAnalyse');
+  anBtn.classList.toggle('on',true);
+  anBtn.onclick=()=>{anBtn.classList.toggle('on',!anBtn.classList.contains('on'));toast(anBtn.classList.contains('on')?'AI analysis on for opened file':'AI analysis off for opened file')};
+
+  // Mirror transport buttons into the fullscreen controls
+  const tFs=$('#transportFs');
+  tFs.innerHTML='';
+  ['tPrevEv','tBack','tPlay','tFwd','tNextEv','tSpeed','tFrame','tSnap','tDl','tFs'].forEach(id=>{const src=document.getElementById(id);if(!src)return;const b=src.cloneNode(true);b.id=id+'Fs';tFs.appendChild(b)});
+  // delegate actions from cloned buttons to the originals
+  tFs.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const src=document.getElementById(b.id.replace(/Fs$/,''));if(src)src.click()});
+
+  $('#tPlay').onclick=pbToggle;$('#tPrevEv').onclick=()=>pbJumpEvent(-1);$('#tNextEv').onclick=()=>pbJumpEvent(1);
+  pbHold('#tBack',-1);pbHold('#tFwd',1);pbHold('#tBackFs',-1);pbHold('#tFwdFs',1);
+  $('#tSpeed').onclick=()=>{const i=PB.SPEEDS.indexOf(PB.speed);PB.speed=PB.SPEEDS[(i+1)%PB.SPEEDS.length];v.playbackRate=PB.speed;$('#tSpeed').textContent=PB.speed+'×'};
+  $('#tSpeedFs').onclick=()=>$('#tSpeed').click();
+  $('#tFrame').onclick=()=>{v.pause();v.currentTime+=1/25};
+  $('#tSnap').onclick=()=>{if(!v.videoWidth)return;const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);const a=document.createElement('a');a.href=c.toDataURL('image/jpeg',.9);a.download='frame-'+Date.now()+'.jpg';a.click();audit('Playback snapshot')};
+  $('#tDl').onclick=()=>{
+    if(PB.fileIdx>=0){const f=PB.files[PB.fileIdx];if(!f)return;const a=document.createElement('a');a.href=f.url;a.download=f.name;a.click();return}
+    if(!PB.cur)return;DB.recBlob(PB.cur).then(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=PB.cur.name;a.click();audit('Downloaded '+PB.cur.name)}).catch(()=>toast('Could not open that recording','err'))};
+
+  $$('.tlbtns [data-z]').forEach(b=>b.onclick=()=>{const len=+b.dataset.z*60000,d0=dayStart(PB.day),d1=d0+864e5,c=PB.t||d0;let a=clamp(c-len/2,d0,Math.max(d0,d1-len));PB.win=len>=864e5?[d0,d1]:[a,a+len]});
+  tlBind();
+  addEventListener('keydown',e=>{if($('#v-play').classList.contains('on')===false||/INPUT|SELECT|TEXTAREA/.test((document.activeElement||{}).tagName||''))return;const k=e.key;
+    if(k===' '||k==='k'){e.preventDefault();pbToggle()}else if(k==='ArrowRight'||k==='l'){if(PB.fileIdx<0)pbSeek(PB.t+(e.shiftKey?60000:k==='l'?10000:5000),true);else PB.v.currentTime+=5}else if(k==='ArrowLeft'||k==='j'){if(PB.fileIdx<0)pbSeek(PB.t-(e.shiftKey?60000:k==='j'?10000:5000),true);else PB.v.currentTime-=5}
+    else if(k===']')pbSpeed(1);else if(k==='[')pbSpeed(-1);else if(k==='.'){v.pause();v.currentTime+=1/25}else if(k===','){v.pause();v.currentTime-=1/25}else if(k==='n')pbJumpEvent(1);else if(k==='p')pbJumpEvent(-1);
+    else if(k==='f'||k==='F')togglePlayerFs();
+    else if(k==='a'||k==='A')$('#pbAnalyse').click()});
+  setInterval(()=>{if($('#v-play').classList.contains('on')&&PB.fileIdx<0&&PB.day===dkey(Date.now()))pbLoad(true)},15000);
+  requestAnimationFrame(tlLoop)}
+
+function togglePlayerFs(){
+  const p=$('#player');
+  if(!p.classList.contains('fs')){
+    p.classList.add('fs');
+    if(PB.fileIdx>=0){ /* AI already running */ }
+  }else{
+    p.classList.remove('fs');
+  }
+}
+
+/* ----- timeline ----- */
+const tl={cv:null,w:0,h:96};
+const timeAt=x=>PB.win[0]+(x/tl.w)*(PB.win[1]-PB.win[0]),xAt=t=>(t-PB.win[0])/(PB.win[1]-PB.win[0])*tl.w;
+function tlBind(){const cv=tl.cv=$('#tl'),tip=$('#tlTip');
+  const pos=e=>{const r=cv.getBoundingClientRect();return e.clientX-r.left};
+  cv.addEventListener('pointerdown',e=>{if(PB.fileIdx>=0)return;cv.setPointerCapture(e.pointerId);PB.drag=true;PB.wasPlaying=!PB.v.paused;const t=timeAt(pos(e));PB.t=t;pbSeek(t,PB.wasPlaying||!PB.cur)});
+  cv.addEventListener('pointermove',e=>{const x=pos(e),t=timeAt(x);PB.hover={x,t};const ev=PB.evs.find(ev=>Math.abs(xAt(ev.t)-x)<7);tip.style.display='block';tip.style.left=clamp(x-50,0,tl.w-140)+'px';tip.textContent=tm(t)+(ev?' · '+ev.title:'');
+    if(PB.drag){PB.t=t;if(Date.now()-PB.lastSeek>140){PB.lastSeek=Date.now();pbSeek(t,PB.wasPlaying)}}});
+  ['pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,e=>{if(PB.drag){PB.drag=false;pbSeek(PB.t,PB.wasPlaying||true)}}));
+  cv.addEventListener('pointerleave',()=>{PB.hover=null;tip.style.display='none'});
+  cv.addEventListener('wheel',e=>{if(PB.fileIdx>=0)return;e.preventDefault();const x=pos(e),t=timeAt(x),len=PB.win[1]-PB.win[0],nl=clamp(len*(e.deltaY>0?1.25:.8),6e4,864e5),f=x/tl.w;let a=t-f*nl;const d0=dayStart(PB.day),d1=d0+864e5;a=clamp(a,d0,Math.max(d0,d1-nl));PB.win=[a,a+nl]},{passive:false})}
+function tlLoop(){requestAnimationFrame(tlLoop);if(!$('#v-play').classList.contains('on'))return;if(PB.fileIdx>=0)return;const cv=tl.cv;if(!cv)return;const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;if(!r.width)return;tl.w=r.width;tl.h=r.height;if(cv.width!==Math.round(r.width*dpr)||cv.height!==Math.round(r.height*dpr)){cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr)}
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const W=tl.w,H=tl.h,[w0,w1]=PB.win,css=getComputedStyle(document.documentElement),mut=css.getPropertyValue('--mut').trim(),bd=css.getPropertyValue('--bd').trim(),acc=css.getPropertyValue('--acc').trim();
+  g.clearRect(0,0,W,H);
+  const len=w1-w0,steps=[1,5,10,15,30,60,120,180,360,720,1440].map(m=>m*60000),step=steps.find(s=>len/s<=10)||steps[steps.length-1];g.font='11px ui-monospace,monospace';g.fillStyle=mut;g.strokeStyle=bd;g.textBaseline='top';
+  for(let t=Math.ceil(w0/step)*step;t<=w1;t+=step){const x=xAt(t);g.beginPath();g.moveTo(x,18);g.lineTo(x,H);g.stroke();const d=new Date(t);g.fillText(p2(d.getHours())+':'+p2(d.getMinutes()),x+3,3)}
+  const by=26,bh=38;g.fillStyle='rgba(120,140,160,.10)';g.fillRect(0,by,W,bh);
+  PB.recs.forEach(r=>{const x0=xAt(r.t),x1=xAt(r.t+(r.dur||1000));if(x1<0||x0>W)return;g.fillStyle=TAGC[r.tag]||'#9aa4b5';g.globalAlpha=PB.cur&&PB.cur.name===r.name?1:.75;g.fillRect(Math.max(0,x0),by,Math.max(2,Math.min(W,x1)-Math.max(0,x0)),bh)});g.globalAlpha=1;
+  PB.evs.forEach(e=>{const x=xAt(e.t);if(x<-6||x>W+6)return;g.fillStyle=SEV[e.sev]?SEV[e.sev].c:'#fff';g.beginPath();g.moveTo(x,by+bh+3);g.lineTo(x-5,by+bh+15);g.lineTo(x+5,by+bh+15);g.closePath();g.fill()});
+  const now=Date.now();if(now>=w0&&now<=w1){const x=xAt(now);g.strokeStyle='#ff5d5d';g.setLineDash([3,3]);g.beginPath();g.moveTo(x,18);g.lineTo(x,H);g.stroke();g.setLineDash([])}
+  if(PB.hover){g.strokeStyle='rgba(255,255,255,.35)';g.beginPath();g.moveTo(PB.hover.x,18);g.lineTo(PB.hover.x,H);g.stroke()}
+  if(PB.t){const x=xAt(PB.t);if(x>=-8&&x<=W+8){g.strokeStyle=acc;g.lineWidth=2;g.beginPath();g.moveTo(x,16);g.lineTo(x,H);g.stroke();g.lineWidth=1;g.fillStyle=acc;g.beginPath();g.arc(x,by-6,6,0,7);g.fill()}
+    $('#pbTime').textContent=dt(PB.t)}
+  else $('#pbTime').textContent=''}
+
+'use strict';
+/* Interface: navigation, live grid, scene panel, alerts, cameras, settings, boot */
+const UI={view:'live',unread:0,
+  go(v,o){
+    if(v!=='play'&&this.view==='play'&&PB.fileIdx>=0){
+      PB.fileIdx=-1;
+      if(PB.url){URL.revokeObjectURL(PB.url);PB.url=null}
+      PB.v.removeAttribute('src');
+      $('#pbCam').disabled=false;$('#pbDay').disabled=false;
+      if(typeof renderFileList==='function')renderFileList();
+      if(window.PBFile&&PBFile.tracker){PBFile.tracker=null;PBFile.cam=null}
+      const p=$('#player');const old=p.querySelector('canvas');if(old)old.remove();PBFile.canvas=null;
+      p.classList.remove('fs');
+    }
+    this.view=v;$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+    if(v==='alerts'){this.unread=0;this.badge();renderAlerts()}if(v==='cams')renderCams();if(v==='set')renderSettings();
+    if(v==='play'){pbFill();if(o&&o.cam){PB.cam=o.cam;$('#pbCam').value=o.cam}if(o&&o.t){PB.day=dkey(o.t);$('#pbDay').value=PB.day;PB.cur=null}
+      pbLoad().then(()=>{if(o&&o.t){PB.t=o.t-3000;pbSeek(o.t-3000,true)}})}},
+  badge(){const b=$('#nAlerts');b.textContent=this.unread>99?'99+':this.unread;b.style.display=this.unread?'block':'none'},
+  onEvent(ev){if(this.view!=='alerts'){this.unread++;this.badge()}else renderAlerts();if(SEV[ev.sev].n>=3)toast('⚠ '+ev.title+(ev.camName?' · '+ev.camName:''),'err');App.cams.forEach(c=>{if(c.id===ev.cam)c.flashFlag(ev)})},
+  openEvent(id){const i=App.events.findIndex(e=>e.id===id||e.sid===id);if(i<0)return toast('That alert is no longer available','err');this.sheet(i)},
+  sheet(i){const ev=App.events[i];if(!ev)return;const ws=WATCH.some(w=>w.plate===ev.plate),row=(k,v)=>v?`<div class="ir"><span>${k}</span><b>${esc(v)}</b></div>`:'';
+    $('#sheet').classList.add('show');$('#shTitle').textContent=ev.title;$('#shCount').textContent=(i+1)+' of '+App.events.length;
+    $('#shBody').innerHTML=`<div style="border-left:6px solid ${SEV[ev.sev].c};padding-left:10px;margin-bottom:10px"><span class="sev" style="--c:${SEV[ev.sev].c}">${SEV[ev.sev].l.toUpperCase()}</span> ${esc(KINDS[ev.kind]?KINDS[ev.kind].l:ev.kind)}${ev.source==='file'?' · from file':''}</div>${ev.wide?`<img class="dimg" src="${esc(ev.wide)}" alt="">`:''}${ev.crop?`<img class="dcr" src="${esc(ev.crop)}" alt="">`:''}
+    <div class="info">${row('Time',dt(ev.t))}${row('Camera',ev.camName||ev.fileName)}${row('What happened',ev.text)}${row('Plate',ev.plate?fmtPlate(ev.plate):'')}${row('Vehicle',ev.meta&&ev.meta.vehicle)}${row('Confidence',ev.meta&&ev.meta.conf?Math.round(ev.meta.conf*100)+'%':'')}</div>
+    <div class="row"><button class="btn pri" data-sa="play" data-i="film">Play recording at this time</button><button class="btn" data-sa="save" data-i="download">Save image</button>${ev.plate&&!ws?`<button class="btn" data-sa="w:alert">Alert on this plate</button><button class="btn" data-sa="w:known">Mark known</button><button class="btn" data-sa="w:vip">Mark VIP</button>`:''}<button class="btn danger" data-sa="del" data-i="trash">Delete</button></div>
+    <div class="row"><button class="btn" data-sa="n" ${i>0?'':'disabled'}>‹ Newer</button><button class="btn" data-sa="o" ${i<App.events.length-1?'':'disabled'}>Older ›</button></div>`;hydrate($('#shBody'));this._si=i},
+  camsChanged(){renderBarCams();if(this.view==='cams')renderCams()},
+  recChanged(){renderBarCams()},
+  syncFollow(){$('#followAll').classList.toggle('on',!!S.follow.on);App.cams.forEach(c=>c.setChips())},
+  addZone(cam,z){modal(`<h3>Name this zone</h3><label>Zone name</label><input id="zn" type="text" value="Zone ${(cam.cfg.zones||[]).length+1}"><div class="row"><button class="btn pri" id="zok">Save zone</button><button class="btn" id="zcancel">Cancel</button></div>`);
+    $('#zok').onclick=()=>{z.name=$('#zn').value.trim()||'Zone';cam.cfg.zones=(cam.cfg.zones||[]).concat(z);cam.editZones=false;saveCams();closeModal();toast('Zone saved. Alerts will fire when something enters it.')};$('#zcancel').onclick=()=>{cam.editZones=false;closeModal()}}};
+function modal(html){$('#mbox').innerHTML=html;hydrate($('#mbox'));$('#modal').classList.add('show')}
+function closeModal(){$('#modal').classList.remove('show')}
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+$('#shBack').onclick=()=>$('#sheet').classList.remove('show');
+$('#shBody').addEventListener('click',async e=>{const b=e.target.closest('[data-sa]');if(!b)return;const ev=App.events[UI._si],a=b.dataset.sa;if(!ev)return;
+  if(a==='n')UI.sheet(UI._si-1);else if(a==='o')UI.sheet(UI._si+1);
+  else if(a==='play'){if(ev.source==='file'){toast('This alert came from an opened file; re-open it in Playback.','err');return}$('#sheet').classList.remove('show');UI.go('play',{cam:ev.cam,t:ev.t})}
+  else if(a==='save'){const x=document.createElement('a');x.href=ev.wide;x.download='alert-'+ev.t+'.jpg';x.click();audit('Saved alert image')}
+  else if(a.startsWith('w:')){WATCH=WATCH.filter(w=>w.plate!==ev.plate).concat({plate:ev.plate,label:'',type:a.slice(2)});saveWatch();toast('Added to the watchlist');UI.sheet(UI._si)}
+  else if(a==='del'&&confirm('Delete this alert?')){DB.delEvent(ev.id).catch(()=>{});App.events.splice(UI._si,1);$('#sheet').classList.remove('show');renderAlerts()}});
+
+/* ----- status bar ----- */
+function renderBarCams(){$('#barcams').innerHTML=App.cams.map(c=>{const rec=REC.state(c),cl=rec?'rec':c.status==='live'?'live':c.status==='error'?'err':'';return`<span class="bc ${cl}"><i></i>${esc(c.cfg.name)}${rec?' · '+rec:''}</span>`}).join('')}
+async function barTick(){$('#bClock').textContent=tm(Date.now());renderBarCams();
+  const a=$('#bApi');a.textContent=!API.online?'No storage':DB.folder?'Folder: '+DB.folder.name:'Saved in browser';a.className='chip '+(API.online?'ok':'bad');}
+async function storTick(){try{const s=await DB.storage();$('#bStor').textContent=fsize(s.used)+(s.max?' / '+fsize(s.max):'')+' · '+s.recordings+' rec'}catch{$('#bStor').textContent='no storage'}}
+$('#bSound').onclick=()=>{S.sound.on=!S.sound.on;saveSettings();$('#bSound').classList.toggle('off',!S.sound.on);setI($('#bSound'),S.sound.on?'speaker':'mute');if(S.sound.on)playSound('chime')};
+$('#bTheme').onclick=()=>{S.ui.theme=S.ui.theme==='light'?'dark':'light';document.documentElement.dataset.theme=S.ui.theme;saveSettings()};
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)UI.go(b.dataset.v)});
+
+/* ----- live view ----- */
+function renderGrid(){const g=$('#grid');g.innerHTML='';App.cams.forEach(c=>g.appendChild(c.tile));g.className='grid'+(S.ui.layout==='auto'?'':' g'+S.ui.layout);$$('#layoutSeg button').forEach(b=>b.classList.toggle('on',b.dataset.l===S.ui.layout))}
+$('#layoutSeg').addEventListener('click',e=>{const b=e.target.closest('[data-l]');if(!b)return;S.ui.layout=b.dataset.l;saveSettings();renderGrid()});
+$('#followAll').onclick=()=>{S.follow.on=!S.follow.on;saveSettings();UI.syncFollow();toast(S.follow.on?'Auto-follow on: the picture zooms and pans to track people and vehicles':'Auto-follow off')};
+$('#narrBtn').onclick=()=>{S.narr.on=!S.narr.on;saveSettings();$('#narrBtn').classList.toggle('on',S.narr.on);if(S.narr.on){speak('Narration on.',2)}else if(window.speechSynthesis)speechSynthesis.cancel()};
+$('#addCamQuick').onclick=()=>camEditor();
+let sceneHtml='';
+function renderScene(){const h=`<h3><span class="live"></span>Live scene</h3>`+(App.cams.map(c=>{const T=c.tracker.live(),dsc=c.status==='live'?(c.descFull||'Analysing…'):(c.msgEl.textContent||'Camera is '+c.status+'.');return`<div class="sc-row"><div class="sc-cam">${esc(c.cfg.name)}<div class="sc-m">${c.status==='live'?T.length+' in view':c.status}</div></div><div class="sc-t">${esc(dsc)}</div><button class="btn sm" data-narr="${esc(c.id)}" data-i="speaker">Narrate</button></div>`}).join('')||'<div class="empty">No cameras yet.</div>');if(h!==sceneHtml){sceneHtml=h;$('#scenePanel').innerHTML=h;hydrate($('#scenePanel'))}}
+$('#scenePanel').addEventListener('click',e=>{const b=e.target.closest('[data-narr]');if(!b)return;const c=App.cams.find(x=>x.id===b.dataset.narr);if(c)speak(c.cfg.name+'. '+(c.descFull||describeCam(c)),2)});
+
+/* ----- alerts ----- */
+const AF={sev:'',cam:'',q:''};
+function renderAlerts(){const s=$('#alCam');if(s.dataset.n!==String(App.cams.length)){s.dataset.n=App.cams.length;s.innerHTML='<option value="">All cameras</option>'+App.cams.map(c=>`<option value="${esc(c.id)}">${esc(c.cfg.name)}</option>`).join('')}
+  const L=App.events.filter(e=>(!AF.sev||e.sev===AF.sev)&&(!AF.cam||e.cam===AF.cam)&&(!AF.q||(e.title+' '+e.text+' '+e.plate).toLowerCase().includes(AF.q)));
+  $('#alList').innerHTML=L.length?L.slice(0,300).map(e=>`<div class="ac" style="--c:${SEV[e.sev].c}" data-open="${esc(e.id)}"><div class="im">${e.wide?`<img src="${esc(e.wide)}" alt="" loading="lazy">`:''}${e.crop?`<img class="cr" src="${esc(e.crop)}" alt="">`:''}</div><div class="bd"><span class="sev">${SEV[e.sev].l.toUpperCase()}</span><b>${esc(e.title)}</b><small>${dt(e.t)} · ${esc(e.camName||e.fileName||'file')}</small></div></div>`).join(''):'<div class="empty">No alerts match.<br>Everything the cameras flag appears here with a picture.</div>'}
+$('#alList').addEventListener('click',e=>{const a=e.target.closest('[data-open]');if(a)UI.openEvent(a.dataset.open)});
+$('#sevSeg').addEventListener('click',e=>{const b=e.target.closest('[data-s]');if(!b)return;AF.sev=b.dataset.s;$$('#sevSeg button').forEach(x=>x.classList.toggle('on',x===b));renderAlerts()});
+$('#alCam').onchange=()=>{AF.cam=$('#alCam').value;renderAlerts()};$('#alQ').oninput=()=>{AF.q=$('#alQ').value.toLowerCase();renderAlerts()};
+async function loadEvents(){try{const l=await DB.events({limit:300});const have=new Set(App.events.map(e=>e.id));App.events=App.events.concat(l.filter(e=>!have.has(e.id))).sort((a,b)=>b.t-a.t)}catch{}}
+
+/* ----- cameras ----- */
+function renderCams(){$('#camList').innerHTML=`<div class="card"><h3>Cameras</h3>`+(App.cams.map(c=>`<div class="camrow"><div class="nm"><b>${esc(c.cfg.name)}</b><small>${({device:'This device'+(c.cfg.deviceId?'':c.cfg.facing==='front'?' (front camera)':' (rear camera)'),mjpeg:'IP camera (MJPEG)',snapshot:'IP camera (snapshots)'})[c.cfg.type]||c.cfg.type} · ${esc(c.status)}${c.cfg.zones&&c.cfg.zones.length?' · '+c.cfg.zones.length+' zone(s)':''}</small></div><button class="btn sm" data-ce="${esc(c.id)}" data-i="edit">Edit</button><button class="btn sm" data-cr="${esc(c.id)}">${c.status==='live'?'Restart':'Start'}</button></div>`).join('')||'<div class="empty">No cameras.</div>')+`<div class="row"><button class="btn pri" id="camAdd" data-i="plus">Add camera</button></div></div>
+  <div class="card"><h3>Camera access — important</h3><p class="hint">Browsers only allow camera access on <b>https://</b> or <b>http://localhost</b>. Opening this file directly (file://) or over plain <b>http://</b> from another device <b>will always be blocked</b> — that is a browser rule, not a bug here.<br><br>
+  • On this computer: run <code>python3 -m http.server 8000</code> in the folder containing this file, then open <b>http://localhost:8000/plate-watch-dvr.html</b>.<br>
+  • On a phone, to use its rear camera: serve the page over <b>https://</b> (e.g. run the local server and use <code>ngrok http 8000</code>, or host it). http:// on a LAN IP will not work.<br>
+  • If a camera is already in use (Camera app, Zoom, Teams), close it and press Start again.<br><br>
+  This device: the rear camera is used by default.</p></div>`;hydrate($('#camList'))}
+$('#camList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='camAdd')camEditor();else if(b.dataset.ce)camEditor(CAMCFG.find(c=>c.id===b.dataset.ce));else if(b.dataset.cr){const c=App.cams.find(x=>x.id===b.dataset.cr);if(c)c.start()}});
+async function camEditor(cfg){const isNew=!cfg;cfg=cfg||{id:'cam'+(Date.now()%1e6),name:'Camera '+(CAMCFG.length+1),type:'device',facing:'rear',deviceId:'',url:'',fps:6,enabled:true,detect:true,rec:'inherit',zones:[]};
+  let devs=[];try{devs=(await navigator.mediaDevices.enumerateDevices()).filter(d=>d.kind==='videoinput'&&d.deviceId)}catch{}
+  const o=(v,l,c)=>`<option value="${esc(v)}"${c===v?' selected':''}>${esc(l)}</option>`;
+  modal(`<h3>${isNew?'Add camera':'Edit camera'}</h3><label>Name</label><input id="cn" type="text" value="${esc(cfg.name)}">
+  <label>Type</label><select id="ct">${o('device','This device (browser camera)',cfg.type)}${o('mjpeg','IP camera: MJPEG stream address',cfg.type)}${o('snapshot','IP camera: snapshot (JPEG) address',cfg.type)}</select>
+  <div id="cdev"><label>Which camera</label><select id="cdv">${o('rear','Rear camera (default)',cfg.deviceId?'':cfg.facing)}${o('front','Front camera',cfg.deviceId?'':cfg.facing)}${devs.map((d,i)=>o(d.deviceId,d.label||('Camera '+(i+1)),cfg.deviceId)).join('')}</select></div>
+  <div id="curl"><label>Address (http://… )</label><input id="cu" type="url" value="${esc(cfg.url)}" placeholder="http://192.168.1.50:8080/video"><label>Frames per second (snapshot)</label><input id="cf" type="number" min="1" max="15" value="${cfg.fps||6}"></div>
+  <label>Recording for this camera</label><select id="cr">${o('inherit','Use the default (Settings)',cfg.rec)}${o('off','Off',cfg.rec)}${o('motion','When something moves',cfg.rec)}${o('alert','Only on alerts',cfg.rec)}${o('continuous','Continuously',cfg.rec)}</select>
+  <label>Detection</label><select id="cd">${o('1','Detect objects, plates and danger',cfg.detect===false?'0':'1')}${o('0','View only (no detection)',cfg.detect===false?'0':'1')}</select>
+  <div id="ctest" class="hint" style="margin-top:8px"></div>
+  <div class="row"><button class="btn pri" id="csave">Save</button><button class="btn" id="ctestb">Test</button>${isNew?'':'<button class="btn danger" id="cdel" data-i="trash">Remove</button>'}<button class="btn" id="ccancel">Cancel</button></div>`);
+  const sync=()=>{const t=$('#ct').value;$('#cdev').style.display=t==='device'?'':'none';$('#curl').style.display=['mjpeg','snapshot'].includes(t)?'':'none'};$('#ct').onchange=sync;sync();
+  const read=()=>{const t=$('#ct').value,dv=$('#cdv').value,n=Object.assign({},cfg,{name:$('#cn').value.trim()||'Camera',type:t,url:$('#cu').value.trim(),fps:+$('#cf').value||6,rec:$('#cr').value,detect:$('#cd').value==='1'});if(t==='device'){if(dv==='rear'||dv==='front'){n.facing=dv;n.deviceId=''}else{n.deviceId=dv}}return n};
+  $('#ctestb').onclick=async()=>{const n=read();$('#ctest').textContent='Testing…';if(n.type==='device'){$('#ctest').textContent='Device cameras are tested when they start.';return}const ok=await new Promise(res=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>res(1);i.onerror=()=>res(0);i.src=n.url+(n.url.includes('?')?'&':'?')+'_='+Date.now();setTimeout(()=>res(0),8000)});$('#ctest').textContent=ok?'✓ Picture received':'✗ Could not read a picture. The camera may block browsers (CORS) or use http on an https page.'};
+  $('#csave').onclick=()=>{Object.assign(cfg,read());saveCam(cfg,isNew);closeModal();toast('Camera saved')};
+  $('#ccancel').onclick=closeModal;
+  if(!isNew)$('#cdel').onclick=()=>{if(!confirm('Remove this camera?'))return;const c=App.cams.find(x=>x.id===cfg.id);if(c){c.stop();c.tile.remove();App.cams=App.cams.filter(x=>x!==c)}CAMCFG=CAMCFG.filter(x=>x.id!==cfg.id);saveCams();closeModal();renderCams();renderBarCams();audit('Removed camera '+cfg.name)}}
+function saveCam(cfg,isNew){let cam;if(isNew){CAMCFG.push(cfg);cam=new Cam(cfg);App.cams.push(cam);$('#grid').appendChild(cam.tile)}else{const i=CAMCFG.findIndex(c=>c.id===cfg.id);CAMCFG[i]=cfg;cam=App.cams.find(c=>c.id===cfg.id);const typeChanged=cam.cfg.type!==cfg.type;cam.cfg=cfg;cam.nameEl.textContent=cfg.name;if(typeChanged){cam.stop();const old=cam.tile,idx=App.cams.indexOf(cam);const nc=new Cam(cfg);App.cams[idx]=nc;old.replaceWith(nc.tile);cam=nc}}
+  saveCams();audit((isNew?'Added':'Updated')+' camera '+cfg.name);if(cfg.enabled!==false)cam.start();if(cfg.detect!==false)aiLoad();renderBarCams();return cam}
+
+/* ----- settings ----- */
+const SCHEMA=[
+ {t:'Detection (free, on-device AI)',d:'Objects, people and number plates are found inside your browser. Nothing is sent to any service.',i:[['ai.minScore','Minimum confidence','range',.3,.9,.05],['ai.fps','Detection speed (frames per second)','range',2,15,1],['ai.ocr','Read number plates','tog'],['ai.region','Plate format','sel',[['uk','UK'],['eu','European'],['us','US / Canada'],['any','Other']]]]},
+ {t:'Auto-follow and zoom',d:'The picture zooms in and out and pans to keep an object framed. Tap an object on the picture to follow it; tap again to release.',i:[['follow.on','Auto-follow objects','tog'],['follow.target','Follow priority','sel',[['auto','Smart: danger, then person, then vehicle'],['person','People first'],['vehicle','Vehicles first'],['largest','Largest object'],['centre','Nearest the centre']]],['follow.onlyDanger','Only follow dangerous things','tog'],['follow.minZoom','Widest view (zoom)','range',1,3,.25],['follow.maxZoom','Closest zoom','range',1.5,8,.5],['follow.smooth','Reaction speed','range',.03,.4,.01],['follow.pad','Space around the object','range',1.2,4,.1],['follow.hold','Return to wide view after (seconds)','range',1,30,1],['follow.plateZoom','Zoom closer on vehicles to read plates','tog'],['follow.classes','Follow these things','classes']]},
+ {t:'Recording',d:'Files are saved locally, each named with its date and time. Continuous files are never longer than 30 minutes.',i:[['rec.mode','Default recording mode','sel',[['off','Off'],['motion','When something moves'],['alert','Only on alerts'],['continuous','Continuously']]],['rec.seg','Longest single file (minutes)','range',1,30,1],['rec.pre','Seconds kept before an event','range',0,10,1],['rec.post','Seconds kept after an event','range',5,120,5],['rec.bitrate','Quality','sel',[[800000,'Low (small files)'],[2500000,'Medium'],[6000000,'High']]],['rec.maxGB','Delete oldest when storage passes (GB, 0 = never)','range',0,500,5],['rec.retainDays','Keep recordings and alerts for (days, 0 = forever)','range',0,365,1]]},
+ {t:'Narration (spoken descriptions)',d:'Uses your device’s built-in voices, so it is free and works offline. Critical alerts always interrupt.',i:[['narr.on','Speak descriptions and alerts','tog'],['narr.mode','When to speak','sel',[['alerts','Alerts only'],['changes','When the scene changes'],['interval','On a timer']]],['narr.interval','Timer (seconds)','range',10,300,5],['narr.minGap','Shortest gap between descriptions (seconds)','range',3,60,1],['narr.detail','How much detail','sel',[['brief','Brief'],['normal','Normal'],['full','Full (every object)']]],['narr.arrivals','Announce arrivals and departures','tog'],['narr.voice','Voice','voice'],['narr.rate','Speed','range',.6,1.6,.05],['narr.pitch','Pitch','range',.5,1.5,.05],['narr.vol','Volume','range',0,1,.05],['narr.quiet','Quiet hours (only critical alerts speak)','tog'],['narr.quietFrom','Quiet from','time'],['narr.quietTo','Quiet until','time']]},
+ {t:'Sounds',i:[['sound.on','Alert sounds','tog'],['sound.vol','Volume','range',0,1,.05]]},
+ {t:'Notifications',d:'Optional and free. ntfy.sh sends push messages to the ntfy phone app; a webhook posts to your own address.',i:[['notify.browser','Browser notifications','tog'],['notify.minSev','Send to phone for','sel',[['medium','Medium and above'],['high','High and above'],['critical','Critical only']]],['notify.ntfy','ntfy topic (leave empty to turn off)','text'],['notify.ntfyServer','ntfy server','text'],['notify.webhook','Webhook address','text']]},
+ {t:'Privacy and display',i:[['privacy.mask','Blur people in saved pictures','sel',[['off','Off'],['people','Blur people']]],['ui.boxes','Show object boxes','tog'],['ui.labels','Show box labels','tog'],['ui.trails','Show movement trails','tog'],['ui.zones','Show zones','tog'],['ui.motion','Show motion outline','tog']]}];
+const CLASSES=['person','car','truck','motorcycle','bus','bicycle','dog','cat','backpack','handbag','suitcase','knife','scissors','baseball bat'];
+const ctl=(p,type,a,b,c)=>{const v=getp(S,p);const dv=v===undefined&&p.startsWith('ui.')?true:v;
+  if(type==='tog')return`<span class="tog"><input type="checkbox" data-p="${p}" ${dv?'checked':''}><span></span></span>`;
+  if(type==='sel')return`<select data-p="${p}">${a.map(([k,l])=>`<option value="${esc(k)}"${String(k)===String(v)?' selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  if(type==='range')return`<input type="range" data-p="${p}" min="${a}" max="${b}" step="${c}" value="${v}"><span class="hint" data-o="${p}" style="min-width:42px;text-align:right">${v}</span>`;
+  if(type==='time')return`<input type="time" data-p="${p}" value="${esc(v)}">`;
+  if(type==='text')return`<input type="text" data-p="${p}" value="${esc(v)}" style="width:min(48%,260px)">`;
+  if(type==='voice')return`<select data-p="${p}"><option value="">Default voice</option>${SP.voices.map(x=>`<option value="${esc(x.name)}"${x.name===v?' selected':''}>${esc(x.name)} (${esc(x.lang)})</option>`).join('')}</select><button class="btn sm" data-act="voicetest" data-i="speaker">Test</button>`;
+  if(type==='classes')return`<span style="display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end;max-width:60%">${CLASSES.map(k=>`<label style="display:inline-flex;gap:4px;align-items:center;background:var(--card2);padding:3px 8px;border-radius:99px;font-size:12px"><input type="checkbox" data-cls="${k}" ${S.follow.classes.includes(k)?'checked':''}>${k}</label>`).join('')}</span>`;return''};
+function renderSettings(){
+  let h=SCHEMA.map(s=>`<div class="card"><h3>${s.t}</h3>${s.d?`<p class="hint" style="margin:-4px 0 8px">${s.d}</p>`:''}${s.i.map(([p,l,t,a,b,c])=>`<div class="set-row"><label>${l}</label>${ctl(p,t,a,b,c)}</div>`).join('')}</div>`).join('');
+  h+=`<div class="card"><h3>Alerts: what counts as dangerous, and how it sounds</h3><p class="hint" style="margin:-4px 0 8px">Every kind of alert has its own severity, sound, and actions. Critical and high alerts interrupt narration and can start recording and push notifications.</p><div style="overflow:auto"><table class="rules"><tr><th>On</th><th>Alert</th><th>Severity</th><th>Sound</th><th>Record</th><th>Push</th><th>Speak</th><th>Settings</th></tr>`+
+   Object.keys(KINDS).map(k=>{const r=rule(k),sel=(f,list,v)=>`<select data-r="${k}.${f}">${list.map(([a,b])=>`<option value="${a}"${a===v?' selected':''}>${b}</option>`).join('')}</select>`,ck=f=>`<span class="tog"><input type="checkbox" data-r="${k}.${f}" ${r[f]?'checked':''}><span></span></span>`;
+     const prm=[r.secs!==undefined?`<label class="hint">seconds <input type="number" data-r="${k}.secs" value="${r.secs}" style="width:64px"></label>`:'',r.dist!==undefined?`<label class="hint">distance <input type="number" step=".05" data-r="${k}.dist" value="${r.dist}" style="width:64px"></label>`:'',r.speed!==undefined?`<label class="hint">speed <input type="number" step=".05" data-r="${k}.speed" value="${r.speed}" style="width:64px"></label>`:'',r.n!==undefined?`<label class="hint">people <input type="number" data-r="${k}.n" value="${r.n}" style="width:56px"></label>`:'',r.mins!==undefined?`<label class="hint">minutes <input type="number" data-r="${k}.mins" value="${r.mins}" style="width:56px"></label>`:'',r.from!==undefined?`<label class="hint">from <input type="time" data-r="${k}.from" value="${r.from}"></label> <label class="hint">to <input type="time" data-r="${k}.to" value="${r.to}"></label>`:''].join(' ');
+     return`<tr><td><span class="tog"><input type="checkbox" data-r="${k}.on" ${r.on?'checked':''}><span></span></span></td><td><b>${esc(KINDS[k].l)}</b><div class="hint">${esc(KINDS[k].d)}</div></td><td>${sel('sev',Object.keys(SEV).map(s=>[s,SEV[s].l]),r.sev)}</td><td>${sel('snd',SOUND_NAMES,r.snd)} <button class="btn sm" data-test="${k}">Test</button></td><td>${ck('rec')}</td><td>${ck('notify')}</td><td>${ck('speak')}</td><td>${prm}</td></tr>`}).join('')+`</table></div></div>`;
+  h+=`<div class="card"><h3>Number plate watchlist</h3><div class="row" style="margin-top:0"><input id="wp" type="text" placeholder="AB12 CDE" style="width:130px;text-transform:uppercase"><input id="wl" type="text" placeholder="Label (optional)" style="flex:1;min-width:110px"><select id="wt"><option value="alert">Alert me</option><option value="known">Known</option><option value="vip">VIP</option></select><button class="btn pri" id="wa">Add</button></div><div id="wlist"></div></div>`;
+  h+=`<div class="card"><h3>System</h3><div class="row" style="margin-top:0"><button class="btn" data-act="diag" data-i="eye">Run diagnostics</button><button class="btn" data-act="audit" data-i="shield">Audit log</button><button class="btn" data-act="folder" data-i="folder">Choose recordings folder</button><button class="btn" data-act="nofolder">Use browser storage</button><button class="btn" data-act="export" data-i="download">Export settings</button><label class="btn"><input type="file" id="imp" accept=".json" hidden>Import settings</label></div><div id="sysout" class="hint" style="margin-top:10px;line-height:1.8;white-space:pre-wrap"></div></div>`;
+  $('#setBody').innerHTML=h;hydrate($('#setBody'));renderWatch()}
+function renderWatch(){const l=$('#wlist');if(!l)return;l.innerHTML=WATCH.length?WATCH.map((w,i)=>`<div class="camrow"><span class="nm"><b>${esc(fmtPlate(w.plate))}</b><small>${esc(w.label||'')}</small></span><span class="sev" style="--c:${w.type==='alert'?SEV.critical.c:w.type==='vip'?'#bf5af2':SEV.info.c}">${w.type.toUpperCase()}</span><button class="btn sm danger" data-wd="${i}">Remove</button></div>`).join(''):'<div class="empty">No plates yet.</div>'}
+$('#setBody').addEventListener('input',e=>{const t=e.target,p=t.dataset.p;if(p&&t.type==='range'){const o=$(`[data-o="${p}"]`);if(o)o.textContent=t.value}});
+$('#setBody').addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.p){const p=t.dataset.p;let v=t.type==='checkbox'?t.checked:t.type==='range'||t.type==='number'?+t.value:t.value;if(p==='rec.bitrate')v=+v;setp(S,p,v);saveSettings();if(p==='narr.on')$('#narrBtn').classList.toggle('on',v);if(p==='follow.on')UI.syncFollow();if(p==='sound.on'){setI($('#bSound'),v?'speaker':'mute');$('#bSound').classList.toggle('off',!v)}}
+  else if(t.dataset.cls){const s=new Set(S.follow.classes);t.checked?s.add(t.dataset.cls):s.delete(t.dataset.cls);S.follow.classes=[...s];saveSettings()}
+  else if(t.dataset.r){const[k,f]=t.dataset.r.split('.');S.rules[k]=Object.assign({},S.rules[k]);let v=t.type==='checkbox'?t.checked:t.type==='number'?+t.value:t.value;S.rules[k][f]=v;saveSettings()}
+  else if(t.id==='imp'&&t.files[0]){t.files[0].text().then(x=>{try{const o=JSON.parse(x);S=merge(DEF,o.settings||{});if(o.watch)WATCH=o.watch;saveSettings();saveWatch();toast('Settings imported');renderSettings()}catch{toast('That file is not valid','err')}})}});
+$('#setBody').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.test){const r=rule(b.dataset.test);playSound(r.snd,true)}
+  else if(b.id==='wa'){const p=norm($('#wp').value);if(p.length<2)return;WATCH=WATCH.filter(w=>w.plate!==p).concat({plate:p,label:$('#wl').value.trim(),type:$('#wt').value});saveWatch();$('#wp').value='';$('#wl').value='';renderWatch()}
+  else if(b.dataset.wd){WATCH.splice(+b.dataset.wd,1);saveWatch();renderWatch()}
+  else if(b.dataset.act==='voicetest')speak('This is how the scene narration will sound.',2);
+  else if(b.dataset.act==='export'){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify({settings:S,watch:WATCH,cameras:CAMCFG},null,1)],{type:'application/json'}));a.download='plate-watch-settings.json';a.click()}
+  else if(b.dataset.act==='audit'){try{const[rows,v]=await Promise.all([DB.auditList(60),DB.auditVerify()]);$('#sysout').textContent=(v.ok?'✓ Audit chain intact ('+v.total+' entries)':'✗ Audit chain broken at entry '+v.brokenAt)+'\n'+rows.map(r=>dt(r.t)+'  '+r.a).join('\n')}catch(e){$('#sysout').textContent='Audit log unavailable: '+e.message}}
+  else if(b.dataset.act==='folder'){await DB.pickFolder();renderSettings()}else if(b.dataset.act==='nofolder'){await DB.clearFolder();renderSettings()}else if(b.dataset.act==='diag')runDiag()});
+async function runDiag(){const L=[],ok=(n,x)=>L.push((x?'✓ ':'✗ ')+n);ok('Secure address (HTTPS or localhost)',window.isSecureContext);ok('Camera API available',!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia));
+  try{const p=await navigator.permissions.query({name:'camera'});L.push('• Camera permission: '+p.state)}catch{}
+  try{const d=await navigator.mediaDevices.enumerateDevices();L.push('• Cameras found: '+d.filter(x=>x.kind==='videoinput').length)}catch{}
+  ok('Browser storage (IndexedDB)',!!window.indexedDB);ok('Save to a folder (Chrome or Edge)',!!window.showDirectoryPicker);L.push('• Recordings are kept: '+(DB.folder?'in the folder “'+DB.folder.name+'”':'in the browser'));
+  ok('Recording (MediaRecorder)',!!window.MediaRecorder);ok('Spoken narration',SP.ok);L.push('• Voices: '+SP.voices.length);ok('Notifications allowed',window.Notification&&Notification.permission==='granted');ok('On-device AI loaded',AI.status==='ready');if(AI.err)L.push('  '+AI.err);ok('Screen wake lock',!!navigator.wakeLock);
+  $('#sysout').textContent=L.join('\n')}
+if(SP.ok)speechSynthesis.addEventListener('voiceschanged',()=>{if(UI.view==='set')renderSettings()});
+
+/* ----- boot ----- */
+(async function boot(){
+  await loadAll();document.documentElement.dataset.theme=S.ui.theme||'dark';hydrate();setI($('#bSound'),S.sound.on?'speaker':'mute');$('#bSound').classList.toggle('off',!S.sound.on);$('#narrBtn').classList.toggle('on',!!S.narr.on);
+  App.cams=CAMCFG.map(c=>new Cam(c));renderGrid();renderScene();UI.syncFollow();
+  if(App.cams.some(c=>c.cfg.detect!==false))aiLoad();
+  App.cams.forEach(c=>{if(c.cfg.enabled!==false)c.start()});
+  aiLoop();requestAnimationFrame(frameLoop);pbInit();pbFill();await loadEvents();renderAlerts();
+  setInterval(barTick,1000);setInterval(renderScene,1500);setInterval(storTick,20000);storTick();barTick();
+  document.addEventListener('pointerdown',()=>{if('Notification' in window&&Notification.permission==='default'&&S.notify.browser)Notification.requestPermission().catch(()=>{})},{once:true});
+  if(!API.online)toast('This browser cannot store anything (private mode?). Live view still works.','err');
+  if('wakeLock' in navigator){const wl=()=>navigator.wakeLock.request('screen').catch(()=>{});wl();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wl()})}
+})();
+
+$('#csvBtn').onclick=()=>DB.exportCsv();
+</script>
+</body>
+</html>
